@@ -1,31 +1,25 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Compiled class file
+*.class
 
-# Precompiled Headers
-*.gch
-*.pch
+# Log file
+*.log
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# BlueJ files
+*.ctxt
 
-# Fortran module files
-*.mod
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# Package Files #
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
 
-# Executables
-*.exe
-*.out
-*.app
+# virtual machine crash logs
+hs_err_pid*
 
 # Folders
 /extra
