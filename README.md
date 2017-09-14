@@ -1,4 +1,5 @@
-NORI Tool
-=========
+The NORI Tool (TNT)
+===================
 
-NORI file decompressor (output files are .bmp)
+A program designed to extract and possibly create NORI
+files for the Libre Trickster project.
