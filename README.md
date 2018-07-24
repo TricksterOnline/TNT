@@ -14,7 +14,9 @@ Non-updated forks are annoying.
 </pre>
 
 ------------------------------------
-##How to compile and/or package TNT
+
+How to compile and/or package TNT
+----------------------------------
 
 Assuming you have Java installed, all you have to do to compile TNT is to 
 access the `src` directory from the command prompt or terminal.
