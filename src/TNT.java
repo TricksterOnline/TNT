@@ -41,54 +41,31 @@ public class TNT
     // Functions ordered by importance to TNT (& thus more likely to be edited)
     // class variables
     public static char mode;
+    public static boolean argsBool=false;
+    public static int argsLen=0;
     public static File noriFile;
     public static byte[] fba; // fba: file byte array
 
     // Main function (keep clean)
     public static void main(String[] args)
     {
-        switch(argCheck(args))
+        argsLen = args.length;
+        argsBool = argCheck(args);
+        if(argsBool)
         {
-        case 1:
-            // In order for Analyzer to have its own mode, some code duplication
-            // between case 1 and 2 was necessary
-            noriFile = new File(args[1]);
-            if(noriFile.exists()==true)
+            for(int i=1; i < argsLen; i++)
             {
-                fba = byteLoader(noriFile);
-                byte[] ba = inflateIfNeeded(fba);
-                Analyze optA = new Analyze(ba,noriFile);
+                noriFile = new File(args[i]);
+                if(noriFile.exists()==true)
+                {
+                    fba = byteLoader(noriFile);
+                    runMode(inflateIfNeeded(fba),noriFile);
+                }
+                else
+                {
+                    argErrors(3);
+                }
             }
-            else
-            {
-                argErrors(3);
-            }
-            break;
-        case 2:
-            noriFile = new File(args[1]);
-            if(noriFile.exists()==true)
-            {
-                fba = byteLoader(noriFile);
-                byte[] ba = inflateIfNeeded(fba);
-                Extract e = new Extract(ba,noriFile);
-            }
-            else
-            {
-                argErrors(3);
-            }
-            break;
-        case 3:
-            lackFeature("Create");
-            break;
-        case 4:
-            argErrors(2);
-            break;
-        case 5:
-            argErrors(1);
-            break;
-        default:
-            argErrors(0);
-            break;
         }
     }
 
@@ -154,32 +131,48 @@ public class TNT
         }
     }
 
+    // Runs the selected mode (side bonus: removes code duplication)
+    public static void runMode(byte[] ba, File nri)
+    {
+        switch(mode)
+        {
+        case 'e':
+            Extract optE = new Extract(ba,nri);
+            break;
+        default:
+            Analyze optA = new Analyze(ba,nri);
+            break;
+        }
+    }
+
     // Determines validity of cmd-line args & returns the resulting case number
     // This exists as a function because it would make main() ugly if it didn't.
-    public static int argCheck(String[] args)
+    public static boolean argCheck(String[] args)
     {
-        int argResult = 0;
+        boolean argResult = false;
         // check for existence of mode argument of the correct length
-        if (args.length !=0 && args[0].length()==1)
+        if(argsLen!=0 && args[0].length()==1)
         {
             // assign first argument to mode
             mode = args[0].charAt(0);
-            char m = mode; // shorten for boolean checks
-
             // This 'if' tree checks for valid mode arg and correct # of args
             // for the given mode. Invokes helpful error messages on failure.
-            if(m =='a' && args.length ==2)
-                argResult = 1;
-            else if(m =='e' && args.length ==2)
-                argResult = 2;
-            else if(m =='c' && args.length ==4)
-                argResult = 3;
-            else if((m =='e'|| m =='a') && args.length!=2)
-                argResult = 4;
-            else if(m =='c' && args.length!=4)
-                argResult = 4;
+            if(mode =='a' && argsLen ==2)
+                argResult = true;
+            else if(mode =='e' && argsLen >=2)
+                argResult = true;
+            else if(mode =='c' && argsLen ==4)
+                lackFeature("Create");
+            else if(mode =='a' && argsLen !=2)
+                argErrors(2);
+            else if(mode =='c' && argsLen !=4)
+                argErrors(2);
             else
-                argResult = 5;
+                argErrors(1);
+        }
+        else
+        {
+            argErrors(0);
         }
         return argResult;
     }
@@ -225,9 +218,9 @@ public class TNT
         use ="Usage: java {-jar} TNT{.jar} {mode} {/path/file.nri} {etc}\n";
         cols="| Mode |           Arguments           | Description      |\n";
         bord="|=========================================================|\n";
-        optA="|  a   | [filename]                    | Analyze          |\n";
-        optE="|  e   | [filename]                    | Extraction       |\n";
-        optC="|  c   | [filename] [srcFileDir] [fmt] | Create           |\n";
+        optA="|  a   | [ filename  ]                 | Analyze          |\n";
+        optE="|  e   | [filename(s)]                 | Extraction       |\n";
+        optC="|  c   | [ filename  ] [srcDir] [fmt]  | Create           |\n";
 
         // Actual output function
         out.println("\n"+cr+use+bord+cols+bord+optA+optE+optC+bord);
