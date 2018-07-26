@@ -100,8 +100,8 @@ NORI file as it is suppose to look:
 +---------------+-----+--------------------------------------------------------+
 | Name          |Bytes| Description                                            |
 +---------------+-----+--------------------------------------------------------+
-| bmpOffsets    | bos | BMP 1st byte locations; bos=(4*numBMP); If compressed  |
-|               |     | by RLE, add (28*n) to each location; n=0,n++ each time |
+| bmpOffsets    | bos | BMP 1st byte locations; bos=(4)(numBMP); If compressed |
+|               |     | by RLE, add (28)(n) to each location; n=0,n++ each time|
 +---------------+-----+--------------------------------------------------------+
 +------------------------------------------------------------------------------+
 | BitmapData: BMP Data For Each Image                                          |
@@ -139,7 +139,7 @@ multi-tool prototype: TO-Toolbox. Therefore, they should be correct.
 +---------------+-----+--------------------------------------------------------+
 | Name          |Bytes| Description                                            |
 +---------------+-----+--------------------------------------------------------+
-| animOffsets   | aos | Animation first byte locations, aos = (4*anims)        |
+| animOffsets   | aos | Animation first byte locations, aos = (4)(anims)       |
 +---------------+-----+--------------------------------------------------------+
 </pre><pre>
 Like the BitmapData section, the next 4 sections are cyclical and can exist in
@@ -162,7 +162,7 @@ section. They are structured visually like this:
 +---------------+-----+--------------------------------------------------------+
 | frames        |  4  | Number of frames(=nof)                                 |
 +---------------+-----+--------------------------------------------------------+
-| frameOffsets  | fos | Frame first byte locations, fos = (4*nof)              |
+| frameOffsets  | fos | Frame first byte locations, fos = (4)(nof)             |
 +---------------+-----+--------------------------------------------------------+
 +------------------------------------------------------------------------------+
 | FrameData: Basic Data For Each Frame in Every Animation                      |
