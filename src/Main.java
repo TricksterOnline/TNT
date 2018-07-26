@@ -24,8 +24,8 @@ import static java.lang.System.out;
 import static java.lang.System.err;
 /**
 Class Description:
-The TNT class is the 'main' class of the TNT program (this is obvious).
-It essentially is the interface for all functionality of the program.
+The Main class is the 'main' class of the TNT program (this is obvious).
+It's essentially the interface for all functionality of the program.
 
 Dev Notes:
 Everything the program does starts and ends here but does not happen here, and
@@ -36,7 +36,7 @@ in the other classes to be far cleaner.
 
 Development Priority: HIGH
 */
-public class TNT
+public class Main
 {
     // Functions ordered by importance to TNT (& thus more likely to be edited)
     // class variables
@@ -215,7 +215,7 @@ public class TNT
              "Copyright (C) 2014-2018 Libre Trickster Team\n"+
              "License: GPLv3+\n\n";
 
-        use ="Usage: java {-jar} TNT{.jar} {mode} {/path/file.nri} {etc}\n";
+        use ="Usage: java -jar TNT.jar {mode} {/path/file.nri} {etc}\n";
         cols="| Mode |           Arguments           | Description      |\n";
         bord="|=========================================================|\n";
         optA="|  a   | [ filename  ]                 | Analyze          |\n";

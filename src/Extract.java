@@ -220,9 +220,9 @@ public class Extract
                 g = g | g >> 5;
                 b = b | b >> 5;
                 // change the int vars to bytes vars and add them to px array
-                px[y+0] = i2b(b);
-                px[y+1] = i2b(g);
-                px[y+2] = i2b(r);
+                px[y+0] = (byte)b;
+                px[y+1] = (byte)g;
+                px[y+2] = (byte)r;
             }
             return px;
         }
@@ -348,14 +348,7 @@ public class Extract
     // int(4bytes) to byte array
     public static final byte[] int2ba(int val)
     {
-        byte[] ba= {(byte)val,(byte)(val>>>8),(byte)(val>>>16),(byte)(val>>>24)};
+        byte[] ba={(byte)val,(byte)(val>>>8),(byte)(val>>>16),(byte)(val>>>24)};
         return ba;
-    }
-
-    // int to byte
-    public static final byte i2b(int val)
-    {
-        byte[] ba= {(byte)val,(byte)(val>>>8),(byte)(val>>>16),(byte)(val>>>24)};
-        return ba[0];
     }
 }
