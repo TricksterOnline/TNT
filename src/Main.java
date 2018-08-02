@@ -165,6 +165,8 @@ public class Main
                 lackFeature("Create");
             else if(mode =='a' && argsLen !=2)
                 argErrors(2);
+            else if(mode =='e' && argsLen < 2)
+                argErrors(2);
             else if(mode =='c' && argsLen !=4)
                 argErrors(2);
             else
