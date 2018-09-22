@@ -14,9 +14,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 import java.io.*;
+import java.nio.*;
 import java.nio.file.*;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import static java.lang.System.in;
 import static java.lang.System.out;
 import static java.lang.System.err;

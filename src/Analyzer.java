@@ -14,8 +14,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 import java.io.*;
-import java.nio.file.*;
-import java.nio.ByteBuffer;
+import java.nio.*;
 import static java.lang.System.in;
 import static java.lang.System.out;
 import static java.lang.System.err;
@@ -154,9 +153,9 @@ public class Analyzer
                 colors[i][1] = palBytes[g];
                 colors[i][2] = palBytes[b];
                 // I hate the neon green bg, so lets switch that with the pink
-                if(colors[i][0]==(byte)0x00 &&
-                   colors[i][1]==(byte)0xFF &&
-                   colors[i][2]==(byte)0x00)
+                if(colors[i][0]==(byte)0x00 && colors[i][1]==(byte)0xFF &&
+                   colors[i][2]==(byte)0x00 || colors[i][0]==(byte)0x15 &&
+                   colors[i][1]==(byte)0xFF && colors[i][2]==(byte)0x00)
                 {
                     colors[i][0]=(byte)0xFF;
                     colors[i][1]=(byte)0x00;
@@ -205,25 +204,22 @@ public class Analyzer
         {
         case 300:
             xtraFrameBytes = 224;
-            out.println(verNum);
             break;
         case 301:
             xtraFrameBytes = 228;
-            out.println(verNum);
             break;
         case 302:
             xtraFrameBytes = 348;
-            out.println(verNum);
             break;
         case 303:
             xtraFrameBytes = 352;
-            out.println(verNum);
             break;
         default:
             out.println("Unknown type! File a bug report.");
             System.exit(1);
             break;
         }
+        out.println(verNum);
     }
 
     public static void gawiCheck(int signature)
