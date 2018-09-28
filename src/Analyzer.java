@@ -15,6 +15,7 @@ GNU General Public License for more details.
 */
 import java.io.*;
 import java.nio.*;
+import java.util.*;
 import static java.lang.System.in;
 import static java.lang.System.out;
 import static java.lang.System.err;
@@ -60,14 +61,15 @@ public class Analyzer
     // constructor for Analyzer class
     public Analyzer(ByteBuffer bb, String filename)
     {
+        out.println("========================================================");
+        out.println("Filename: "+filename);
         try
         {
-            out.println("Filename: "+filename);
             // Read and Assign info about the noriFile
             setNoriHeader(bb);
             setGawiData(bb);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             out.println("Something donked up (AM):\n"+ex);
         }
@@ -86,7 +88,6 @@ public class Analyzer
         out.println("fsize w/o gawi: "+withoutGawi);
         fsize = bb.getInt();
         out.println("fsize: "+fsize);
-        //bbStatus(bb);
     }
 
     public static void setGawiData(ByteBuffer bb)
@@ -107,14 +108,12 @@ public class Analyzer
         out.println("# of images: "+numBMP);
         gsize = bb.getInt();
         out.println("gsize: "+gsize);
-        //bbStatus(bb);
 
         // Palette Section (if exists)
         if(hasPalette) setPaletteData(bb);
 
         // Offsets
         setBmpOffsets(bb,numBMP);
-        //bbStatus(bb);
     }
 
     public static void setPaletteData(ByteBuffer bb)
@@ -127,43 +126,39 @@ public class Analyzer
         bb.position(112);// jump over unidentified data
         psize = bb.getInt();
         out.println("psize: "+psize);
-        palette = setPalette(bb,psize-40);
-        int num1 = bb.getInt();
-        int num2 = bb.getInt();
-        //bbStatus(bb);
+        palette = setPalette(bb,psize);
+        if(psize==808) bb.getLong();
     }
 
     // Make BMP color palette from raw palette data. Okay, one of the harder to
     // follow parts here. Colors are stored in BGR order. Take it in stride.
-    public static byte[][] setPalette(ByteBuffer bb, int size)
+    public static byte[][] setPalette(ByteBuffer bb, int psz)
     {
-        byte[] palBytes = new byte[size];
-        int numColors = size/3;
-        byte[][] colors = new byte[numColors][3];
+        byte x00=(byte)0,x13=(byte)19,x15=(byte)21,x23=(byte)35,xFF=(byte)255;
+        byte[] palBytes = new byte[768], newBG = {xFF,x00,xFF};
+        byte[] bg1= {x00,xFF,x00}, bg2= {x15,xFF,x00}, bg3= {x23,x13,x13};
+        byte[][] colors = new byte[256][3];
         try
         {
             // gets/puts the palette bytes into the palBytes array
-            bb.get(palBytes,0,size);
+            bb.get(palBytes,0,768);
             // Place the bytes in the dual array 'colors' that groups the rgb
             // bytes according to the color/palette index they represent
-            for(int i = 0; i < numColors; i++)
+            for(int i = 0; i < 256; i++)
             {
                 int x = i*3, b=x+0, g=x+1, r=x+2;
                 colors[i][0] = palBytes[r];
                 colors[i][1] = palBytes[g];
                 colors[i][2] = palBytes[b];
                 // I hate the neon green bg, so lets switch that with the pink
-                if(colors[i][0]==(byte)0x00 && colors[i][1]==(byte)0xFF &&
-                   colors[i][2]==(byte)0x00 || colors[i][0]==(byte)0x15 &&
-                   colors[i][1]==(byte)0xFF && colors[i][2]==(byte)0x00)
-                {
-                    colors[i][0]=(byte)0xFF;
-                    colors[i][1]=(byte)0x00;
-                    colors[i][2]=(byte)0xFF;
-                }
+                if(Arrays.equals(colors[i],bg1) || Arrays.equals(colors[i],bg2))
+                    colors[i] = newBG;
+                // Change background on non-standard palettes for consistency
+                if(i==0 && psz==800 && Arrays.equals(colors[i],bg3))
+                    colors[i] = newBG;
             }
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             out.println("Something donked up (SP):\n"+ex);
         }

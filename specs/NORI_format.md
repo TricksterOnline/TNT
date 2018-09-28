@@ -87,13 +87,11 @@ NORI file as it is suppose to look:
 +---------------+-----+--------------------------------------------------------+
 | param_05      |  4  | A true/false flag for something                        |
 +---------------+-----+--------------------------------------------------------+
-| data_length   |  4  | length = size of entire palette section                |
+| pal_length    |  4  | length = size of entire palette section                |
 +---------------+-----+--------------------------------------------------------+
-| [RGB24DATA]   | psz | raw palette data (psz = length - 40); see BitmapData   |
+| [RGB24DATA]   | 768 | raw palette data; see BitmapData                       |
 +---------------+-----+--------------------------------------------------------+
-| num1          |  4  | 111, always the same #. Not sure what it means, yet.   |
-+---------------+-----+--------------------------------------------------------+
-| num2          |  4  | 254, always the same #. Not sure what it means, yet.   |
+| twoNums       |  8  | Only exists if palette length=808; always 111 & 254    |
 +---------------+-----+--------------------------------------------------------+
 +------------------------------------------------------------------------------+
 | BitmapOffsetData: BMP Offset Address Info                                    |

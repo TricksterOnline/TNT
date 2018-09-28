@@ -25,8 +25,8 @@ The Analyze class contains the functions which call the Analyzer class. This
 class provides a standalone interface for the Analyzer functionality.
 
 Dev Notes:
-This class is a stickman construct. I hope to find a better way to include a 
-standalone Analyze option inside Main.java, but for the sake of time this will 
+This class is a stickman construct. I hope to find a better way to include a
+standalone Analyze option inside Main.java, but for the sake of time this will
 have to do for now. I will admit that my limited understanding of Java and
 usage of bytebuffers across classes is the cause of this file's existence.
 
@@ -48,7 +48,7 @@ public class Analyze
             // Analyze the file
             Analyzer a = new Analyzer(fbb,name);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             out.println("Something donked up (OptA):\n"+ex);
         }

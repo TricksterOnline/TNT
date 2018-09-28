@@ -81,7 +81,7 @@ public class Main
             // Loads file into byte array
             bytes = Files.readAllBytes(file.toPath());
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             out.println("Something donked up (FBA):\n"+ex);
         }
@@ -118,7 +118,7 @@ public class Main
                 dcmp.end();
                 if(decompsz==realsz) out.println("Decompression successful!");
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 out.println("Something donked up (INFLATE):\n"+ex);
             }

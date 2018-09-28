@@ -33,7 +33,7 @@ Development Priority: HIGHEST
 */
 public class Extract
 {
-    // class variables (some of which I don't need, others I wish I didn't)
+    // class variables
     public static int nBMP=0, bpp=0, pos=0, dlen=0, w=0, h=0, nlen=0;
     public static boolean compressed=false;
     public static byte[][] pal;
@@ -116,9 +116,10 @@ public class Extract
     // foreground pixel data that is repeated until the encodedSize is met.
     public static byte[] decompress(byte[] input)
     {
-        // Initialize the vars: encodedSize, bg pixels, fg pixels, Bytes / pixel
-        int encodedSize=0, bg=0, fg=0, Bpp=(bpp/8);
-        byte[] result = new byte[w*h*Bpp];
+        // Initialize vars: encodedSize, bg pixels, fg pixels, Bytes/px, fg*Bpp
+        int encodedSize=0, bg=0, fg=0, Bpp=(bpp/8), fgxBpp=0;
+        byte x00=(byte)0, x1F=(byte)31, x7C=(byte)124, xFF=(byte)255;
+        byte[] result = new byte[w*h*Bpp], bg1= {x1F,x7C}, bg2= {xFF,x00,xFF};
         // Create bytebuffers for the input and output arrays
         ByteBuffer bi = ByteBuffer.wrap(input).order(ByteOrder.LITTLE_ENDIAN);
         ByteBuffer bo = ByteBuffer.wrap(result).order(ByteOrder.LITTLE_ENDIAN);
@@ -128,46 +129,40 @@ public class Extract
             encodedSize = (int)bi.getShort()-2;
             while(encodedSize > 0)
             {
-                bg = (int)bi.getShort();
-                fg = (int)bi.getShort();
-                byte[] fgData = new byte[fg*Bpp];
-                bi.get(fgData,0,fg*Bpp);
+                // Get the encoded scanline internal parameters
+                bg =(int)bi.getShort();
+                fg =(int)bi.getShort();
+                fgxBpp = fg*Bpp;
+                // Get foreground pixel data for the scanline
+                byte[] fgData = new byte[fgxBpp];
+                bi.get(fgData,0,fgxBpp);
+                // Set background pixels for scanline
                 for(int x=0; x < bg; x++)
                 {
-                    if(Bpp==3)
-                    {
-                        bo.put((byte)0xFF);
-                        bo.put((byte)0x00);
-                        bo.put((byte)0xFF);
-                    }
-                    else if(Bpp==2)
-                    {
-                        bo.put((byte)0x1F);
-                        bo.put((byte)0x7C);
-                    }
+                    if(Bpp==2)
+                        bo.put(bg1,0,2);
+                    else if(Bpp==3)
+                        bo.put(bg2,0,3);
                     else
-                        bo.put((byte)0x00);
+                        bo.put(x00);
                 }
-                for(int y=0; y < fg*Bpp; y++)
+                // Set foreground pixels for scanline
+                for(int y=0; y < fgxBpp; y++)
                 {
                     bo.put(fgData[y]);
                 }
                 // Subtract the bytes for the fg & bg vars, and fgData
-                encodedSize -= 4+(fg*Bpp);
+                encodedSize -= 4+fgxBpp;
             }
         }
         return result;
     }
 
-    // Dirty little function I created b/c I didn't have time to waste figuring
-    // out how to make Analyzer's instance vars available to all the functions
-    // in this class without handing them out one by one as parameters inside
-    // the Extract constructor. Runs Analyzer & passes vars to local globals.
+    // Runs Analyzer & passes vars to local globals.
     public static void runAnalyzer(ByteBuffer bb)
     {
         // Analyze the file
         Analyzer a = new Analyzer(bb, name);
-
         // Load the necessary vars
         nBMP = a.numBMP;
         bpp = a.bmpBitDepth;
