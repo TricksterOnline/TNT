@@ -18,8 +18,8 @@ Non-updated forks are annoying.
 How to compile and package TNT
 ----------------------------------
 
-Assuming you have Java installed, all you have to do to compile TNT is to 
-access the `src` directory from the command prompt or terminal.
+Assuming you have [Java JDK](http://jdk.java.net) installed, all you have to do
+to compile TNT is to access the `src` folder from the command prompt or terminal
 
 Then run the following command:
 ```bash
