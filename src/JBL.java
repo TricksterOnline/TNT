@@ -32,7 +32,7 @@ Works exclusively with bytes and byte arrays: no numbers, objects, or generics.
 No dealing with the RGB like its a short int. We do things the byte way.
 All data is little-endian format.
 
-Version: 0.9.0
+Version: 0.9.1
 */
 public class JBL
 {
@@ -315,13 +315,13 @@ public class JBL
     }
 
     // For use when making a set of BMP (one at a time in a loop)
-    public static void makeBMP(byte[] bmp, int currentNum)
+    public static void makeBMP(byte[] bmp, int currentNum, String suffix)
     {
         try
         {
             // Set BMP name and location, then write BMP to file
             String sNum = String.format("%0"+nLen+"d", currentNum);
-            File img = new File(dir+name+"_"+sNum+".bmp");
+            File img = new File(dir+name+"_"+sNum+suffix+".bmp");
             Files.write(img.toPath(),bmp);
         }
         catch(Exception ex)

@@ -34,7 +34,7 @@ Development Priority: HIGHEST
 public class Extract
 {
     // class variables
-    public static int nBMP=0, bpp=0, pos=0, dlen=0, w=0, h=0, nlen=0;
+    public static int nBMP=0, bpp=0, pos=0, dlen=0, w=0, h=0, nlen=0, dcount=0;
     public static boolean compressed=false;
     public static byte[][] pal;
     public static int[] offsets;
@@ -69,17 +69,30 @@ public class Extract
             for(int i=0; i < nBMP; i++)
             {
                 int n=i+1, bmpNow=offsets[i], bmpNxt=offsets[i+1];
-                // get/set the standard info about the bmp
-                setBitmapData(fbb);
-                bl.setJBLVars(dir,name,w,h,bpp);
                 out.printf("#%0"+nlen+"d, offset: %d\n",n,bmpNow);
-                // Next 4 lines: get img data, convert to BMP24, & prepare BMP
-                byte[] rawBytes = bl.getImgBytes(fbb,dlen);
-                byte[] bytes = decompressor(rawBytes);
-                byte[] pixels = bl.toStdRGB(bytes);
-                byte[] bmp = bl.setBMP(pixels,true);
-                // Write the new BMP into existence
-                bl.makeBMP(bmp,n);
+                // get data count (determines if subset exists)
+                dcount = fbb.getInt();
+                for(int x=1; x <= dcount; x++)
+                {
+                    // get/set the standard info about the bmp
+                    setBitmapData(fbb);
+                    bl.setJBLVars(dir,name,w,h,bpp);
+                    // Next 4 lines: get img data, convert to BMP24, & prep BMP
+                    byte[] rawBytes = bl.getImgBytes(fbb,dlen);
+                    byte[] bytes = decompressor(rawBytes);
+                    byte[] pixels = bl.toStdRGB(bytes);
+                    byte[] bmp = bl.setBMP(pixels,true);
+                    // Write the new BMP into existence
+                    if(dcount >1)
+                    {
+                        String subName = String.format("_%02d",x);
+                        bl.makeBMP(bmp,n,subName);
+                    }
+                    else
+                    {
+                        bl.makeBMP(bmp,n,"");
+                    }
+                }
                 // Ensure the buffer is in the right position for the next bmp
                 if(pos!=bmpNxt && bmpNxt!=0) fbb.position(bmpNxt);
             }
@@ -93,8 +106,7 @@ public class Extract
     // Assign the BitmapData header info
     public static void setBitmapData(ByteBuffer bb)
     {
-        // assign: flag, data length, width, height; then skip unknowns
-        int flag = bb.getInt();
+        // assign: data length, width, height; then skip unknowns
         dlen = bb.getInt();
         w = bb.getInt();
         h = bb.getInt();
