@@ -126,17 +126,16 @@ public class Analyzer
         bb.position(112);// jump over unidentified data
         psize = bb.getInt();
         out.println("psize: "+psize);
-        palette = setPalette(bb,psize);
+        palette = setPalette(bb);
         if(psize==808) bb.getLong();
     }
 
     // Make BMP color palette from raw palette data. Okay, one of the harder to
     // follow parts here. Colors are stored in BGR order. Take it in stride.
-    public static byte[][] setPalette(ByteBuffer bb, int psz)
+    public static byte[][] setPalette(ByteBuffer bb)
     {
-        byte x00=(byte)0,x13=(byte)19,x15=(byte)21,x23=(byte)35,xFF=(byte)255;
+        byte x00=(byte)0, xFF=(byte)255;
         byte[] palBytes = new byte[768], newBG = {xFF,x00,xFF};
-        byte[] bg1= {x00,xFF,x00}, bg2= {x15,xFF,x00}, bg3= {x23,x13,x13};
         byte[][] colors = new byte[256][3];
         try
         {
@@ -150,12 +149,8 @@ public class Analyzer
                 colors[i][0] = palBytes[r];
                 colors[i][1] = palBytes[g];
                 colors[i][2] = palBytes[b];
-                // I hate the neon green bg, so lets switch that with the pink
-                if(Arrays.equals(colors[i],bg1) || Arrays.equals(colors[i],bg2))
-                    colors[i] = newBG;
-                // Change background on non-standard palettes for consistency
-                if(i==0 && psz==800 && Arrays.equals(colors[i],bg3))
-                    colors[i] = newBG;
+                // standardize the bg to neon pink
+                if(i==0 && !Arrays.equals(colors[i],newBG)) colors[i]=newBG;
             }
         }
         catch(Exception ex)
@@ -182,6 +177,7 @@ public class Analyzer
         for(int i=0; i < bmpCount; i++)
         {
             bmpOffsets[i] = bmpOffsets[i] + pos;
+            //out.println(bmpOffsets[i]);
         }
     }
 

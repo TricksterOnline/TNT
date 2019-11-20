@@ -88,9 +88,9 @@ public class Main
         return bytes;
     }
 
-    // While I would prefer to have this function in the another class but that
-    // would necessitate the duplication of this code in both Analyze & Extract
-    // or the gathering of data with two bytebuffers if I place it in Analyzer.
+    // While I would prefer to have this function in another class, that would
+    // necessitate the duplication of this code in both Analyze & Extract or the
+    // gathering of data with two bytebuffers if I place it in Analyzer.
     // Thus this is the optimal class for this funct with least code duplication
     // Checks for and decompresses zlib compression if found
     public static byte[] inflateIfNeeded(byte[] in)

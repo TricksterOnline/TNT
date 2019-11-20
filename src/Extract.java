@@ -124,7 +124,7 @@ public class Extract
     }
 
     // Custom Run-length Encoding Decompression function.
-    // Each scanline is defined by a encodedSize, and a cycle of background and
+    // Each scanline is defined by a encodedSize, then a cycle of background and
     // foreground pixel data that is repeated until the encodedSize is met.
     public static byte[] decompress(byte[] input)
     {
