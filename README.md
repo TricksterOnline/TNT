@@ -1,10 +1,10 @@
 The NORI Tool (TNT)
 ===================
 
-A program designed to Extract and possibly create NORI
-files for the Libre Trickster project.
+A program designed to Extract and Create NORI files.
+Part of the Libre Trickster project.
 
-Test it on any .nri or .bac file you want. If it isn't extracted correctly, 
+Test it on any .nri or .bac file you want. If it isn't extracted correctly,
 open a GitHub issue immediately and it will get fixed.
 
 <pre>

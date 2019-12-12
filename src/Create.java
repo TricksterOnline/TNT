@@ -157,9 +157,12 @@ public class Create
 
     private static void addBmpSection(ByteBuffer bb, ByteBuffer dbb, NORI nf)
     {
-        int off=0, end=0;
+        String dcErr,manualFix;
+        dcErr="Error: dcount not 1, space was added for BMP id: ";
+        manualFix="To solve, manually fix: fsize, gsize, bmpOffsets, & dcount";
         for(int i=0; i < nf.numBMP; i++)
         {
+            int addSpace=0;
             bb.putInt(nf.bmpSpecs[i][0]);
             bb.putInt(nf.bmpSpecs[i][1]);
             bb.putInt(nf.bmpSpecs[i][2]);
@@ -170,6 +173,16 @@ public class Create
             byte[] data = new byte[nf.bmpSpecs[i][1]];
             dbb.get(data,0,nf.bmpSpecs[i][1]);
             bb.put(data);
+            pos = bb.position();
+            if(nf.bmpSpecs[i][0]!=1)
+            {
+                if(i!=(nf.numBMP-1))
+                    addSpace = nf.bmpOffsets[i+1]-nf.bmpOffsets[i]-data.length;
+                else
+                    addSpace = (nf.gsize+40) - pos;
+                out.println(dcErr+i+"\n"+manualFix);
+                bb.position(pos+addSpace);
+            }
         }
     }
 
@@ -395,7 +408,6 @@ public class Create
             {
                 for(int f=0; f < nf.frames[a]; f++)
                 {
-                    
                     nf.frameOffsets[a][f] = frameOff[dex0++];
                     nf.frameData[a][f][0] = delays[dex1++];
                     nf.frameData[a][f][1] = planes[dex2++];
