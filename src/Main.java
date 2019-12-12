@@ -2,7 +2,7 @@
 The NORI Tool (TNT), is a program designed to extract and possibly create NORI
 files for the Libre Trickster project.
 
-Copyright (C) 2014-2018 Libre Trickster Team
+Copyright (C) 2014-2020 Libre Trickster Team
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -42,35 +42,45 @@ public class Main
     public static char mode;
     public static boolean argsBool=false;
     public static int argsLen=0;
-    public static File noriFile;
+    public static File noriFile, cfg;
     public static byte[] fba; // fba: file byte array
 
     // Main function (keep clean)
     public static void main(String[] args)
     {
+        NORI nf = new NORI();
         argsLen = args.length;
         argsBool = argCheck(args);
         if(argsBool)
         {
-            for(int i=1; i < argsLen; i++)
+            if(mode!='c')
             {
-                noriFile = new File(args[i]);
-                if(noriFile.exists()==true)
+                for(int i=1; i < argsLen; i++)
                 {
-                    fba = byteLoader(noriFile);
-                    runMode(inflateIfNeeded(fba),noriFile);
+                    noriFile = new File(args[i]);
+                    if(noriFile.exists())
+                    {
+                        nf.setNFileVars(noriFile,0);
+                        nf.checkDir();
+                        fba = byteLoader(noriFile);
+                        runMode(inflateIfNeeded(fba),nf);
+                    }
+                    else
+                    {
+                        argErrors(3);
+                    }
                 }
-                else
-                {
-                    argErrors(3);
-                }
+            }
+            else
+            {
+                Create optC = new Create(cfg,args[2],nf);
             }
         }
     }
 
     // This function loads the file into a byte array, so other functions can
     // access it. Does nothing else. No need to name the file after it ;)
-    public static byte[] byteLoader(File file)
+    private static byte[] byteLoader(File file)
     {
         long numBytes = file.length();
         // Max byte array size is ~2GB, which is much longer than any existing
@@ -83,17 +93,13 @@ public class Main
         }
         catch(Exception ex)
         {
-            out.println("Something donked up (FBA):\n"+ex);
+            out.println("Error in (FBA):\n"+ex);
         }
         return bytes;
     }
 
-    // While I would prefer to have this function in another class, that would
-    // necessitate the duplication of this code in both Analyze & Extract or the
-    // gathering of data with two bytebuffers if I place it in Analyzer.
-    // Thus this is the optimal class for this funct with least code duplication
     // Checks for and decompresses zlib compression if found
-    public static byte[] inflateIfNeeded(byte[] in)
+    private static byte[] inflateIfNeeded(byte[] in)
     {
         int fsig=0, decompsz=0, cmpdatasz=0;
         boolean fsb = false;
@@ -120,7 +126,7 @@ public class Main
             }
             catch(Exception ex)
             {
-                out.println("Something donked up (INFLATE):\n"+ex);
+                out.println("Error in (INFLATE):\n"+ex);
             }
             return tmp;
         }
@@ -131,22 +137,28 @@ public class Main
     }
 
     // Runs the selected mode (side bonus: removes code duplication)
-    public static void runMode(byte[] ba, File nri)
+    private static void runMode(byte[] ba, NORI nri)
     {
         switch(mode)
         {
         case 'e':
-            Extract optE = new Extract(ba,nri);
+            Extract opte = new Extract(ba,nri,false);
+            break;
+        case 'E':
+            Extract optE = new Extract(ba,nri,true);
+            break;
+        case 'A':
+            Analyze optA = new Analyze(ba,nri,true);
             break;
         default:
-            Analyze optA = new Analyze(ba,nri);
+            Analyze opta = new Analyze(ba,nri,false);
             break;
         }
     }
 
     // Determines validity of cmd-line args & returns the resulting case number
     // This exists as a function because it would make main() ugly if it didn't.
-    public static boolean argCheck(String[] args)
+    private static boolean argCheck(String[] args)
     {
         boolean argResult = false;
         // check for existence of mode argument of the correct length
@@ -156,17 +168,17 @@ public class Main
             mode = args[0].charAt(0);
             // This 'if' tree checks for valid mode arg and correct # of args
             // for the given mode. Invokes helpful error messages on failure.
-            if(mode =='a' && argsLen ==2)
+            if((mode =='a'||mode =='A') && argsLen >=2)
                 argResult = true;
-            else if(mode =='e' && argsLen >=2)
+            else if((mode =='e'||mode =='E') && argsLen >=2)
                 argResult = true;
-            else if(mode =='c' && argsLen ==4)
-                lackFeature("Create");
-            else if(mode =='a' && argsLen !=2)
+            else if(mode =='c' && argsLen ==3)
+                argResult = cmArgCheck(args);
+            else if((mode =='a'||mode =='A') && argsLen < 2)
                 argErrors(2);
-            else if(mode =='e' && argsLen < 2)
+            else if((mode =='e'||mode =='E') && argsLen < 2)
                 argErrors(2);
-            else if(mode =='c' && argsLen !=4)
+            else if(mode =='c' && argsLen !=3)
                 argErrors(2);
             else
                 argErrors(1);
@@ -178,15 +190,36 @@ public class Main
         return argResult;
     }
 
+    // Verifies the existence of the Create mode parameters
+    private static boolean cmArgCheck(String[] args)
+    {
+        boolean result = false;
+        cfg = new File(args[1]);
+        if(cfg.exists())
+        {
+            if(Files.isDirectory(Paths.get(args[2])))
+                result = true;
+            else
+                argErrors(5);
+        }
+        else
+        {
+            argErrors(4);
+        }
+        return result;
+    }
+
     // Invalid command-line arguments responses
-    public static void argErrors(int argErrorNum)
+    private static void argErrors(int argErrorNum)
     {
         int errNum = argErrorNum;
         String errMsg0,errMsg1,errMsg2,errMsg3,errMsg4,errMsg5,errMsg6;
         errMsg0 ="Error: Mode argument is too long or missing";
         errMsg1 ="Error: Invalid Mode argument";
         errMsg2 ="Error: Incorrect number of arguments for this Mode";
-        errMsg3 ="Error: File does not exist. Nice try.";
+        errMsg3 ="Error: NORI file does not exist. Nice try.";
+        errMsg4 ="Error: Config file does not exist. Tragic.";
+        errMsg5 ="Error: Specified BMP directory does not exist.";
         switch(errNum)
         {
         case 0:
@@ -201,6 +234,12 @@ public class Main
         case 3:
             out.println(errMsg3);
             break;
+        case 4:
+            out.println(errMsg4);
+            break;
+        case 5:
+            out.println(errMsg5);
+            break;
         default:
             out.println("Unknown Error");
             break;
@@ -209,30 +248,26 @@ public class Main
     }
 
     // Standard usage output, explaining available modes and required arguments
-    public static void usage()
+    private static void usage()
     {
-        String cr, use, cols, bord, optA, optE, optC;
+        String cr, use, col, bdr, opa, opA, ope, opE, opc, ex;
         cr = "The NORI Tool (TNT)\n"+
-             "Copyright (C) 2014-2018 Libre Trickster Team\n"+
+             "Copyright (C) 2014-2020 Libre Trickster Team\n"+
              "License: GPLv3+\n\n";
 
-        use ="Usage: java -jar TNT.jar {mode} {/path/file.nri} {etc}\n";
-        cols="| Mode |           Arguments           | Description      |\n";
-        bord="|=========================================================|\n";
-        optA="|  a   | [ filename  ]                 | Analyze          |\n";
-        optE="|  e   | [filename(s)]                 | Extraction       |\n";
-        optC="|  c   | [ filename  ] [srcDir] [fmt]  | Create           |\n";
+        use="Usage: java -jar TNT.jar {mode} {/path/file.nri} {etc}\n";
+        col="|Mode|        Arguments         | Description                 |\n";
+        bdr="===============================================================\n";
+        opa="| a  | [filename(s)]            | Analyze NORI files          |\n";
+        opA="| A  | [filename(s)]            | Analyze w/ config output    |\n";
+        ope="| e  | [filename(s)]            | Extract NORI files          |\n";
+        opE="| E  | [filename(s)]            | Extract w/ img subsets      |\n";
+        opc="| c  | [example.cfg] [/imgDir/] | Create NORI file            |\n";
+
+        ex ="Example: java -jar TNT.jar a ../ex/path/ntf/all.nri\n";
 
         // Actual output function
-        out.println("\n"+cr+use+bord+cols+bord+optA+optE+optC+bord);
-    }
-
-    // Standardized 'missing feature' response
-    public static void lackFeature(String feature)
-    {
-        String errMsg, ftrName = feature;
-        errMsg ="\nSorry, the '"+ftrName+"' feature is not currently available";
-        out.println(errMsg);
+        out.println("\n"+cr+use+bdr+col+bdr+opa+opA+ope+opE+opc+bdr+ex);
     }
 }
 

@@ -3,7 +3,7 @@ Java Bitmap Library (JBL)
 A fairly spontaneous Java library that contains functions to deal with bitmaps
 both standard and abnormal. Useful for any bitmap not just BMP images.
 
-Copyright (C) 2018 Sean Stafford (a.k.a. PyroSamurai)
+Copyright (C) 2018-2020 Sean Stafford (a.k.a. PyroSamurai)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,9 +18,7 @@ GNU General Public License for more details.
 import java.io.*;
 import java.nio.*;
 import java.nio.file.*;
-import static java.lang.System.in;
 import static java.lang.System.out;
-import static java.lang.System.err;
 /**
 Class Description:
 This class/library was created to deal with the task of extracting bitmaps from
@@ -30,17 +28,19 @@ normal bitmap creation too, since Java lacks proper byte support for bitmaps.
 Dev Notes:
 Works exclusively with bytes and byte arrays: no numbers, objects, or generics.
 No dealing with the RGB like its a short int. We do things the byte way.
-All data is little-endian format.
+All data is little-endian format. Don't think too hard about the actual code.
+It is a huge headache to understand these bit formats.
 
-Version: 0.9.1
+Version: 1.0.0
 */
 public class JBL
 {
     // class variables
-    public static int bpp=0,Bpp=0,w=0,h=0,dataSize=0,bppOut=24,pixels=0,nLen=0;
-    public static String name, dir, bitFmt;
-    public static final String RGB555="RGB555",RGB565="RGB565",ARGB16="ARGB16";
+    public static int bpp=0,Bpp=0,w=0,h=0,dataSize=0,bppOut=0,pixels=0,nLen=0;
+    public static String name, dir, bitFmtIn, bitFmtOut, RGB24="RGB24";
+    public static String RGB555="RGB555",RGB565="RGB565",ARGB16="ARGB16";
     public static byte[][] palette = new byte[256][3];
+    public static boolean bitFmtOutSet=false;
 
     // constructor for JBL class
     public JBL() {}
@@ -48,19 +48,27 @@ public class JBL
     // ######################## class mutators: begin ########################
     // The mutators need to be run before getImgBytes(), to have any effect
 
-    // This function is very important, it must be run first before any of the
-    // other functions in this library, param names shortened to fit 80 cols
-    // Full names: directory path, filename, width, height, bits per pixel
-    public static void setJBLVars(String D,String Name,int W,int H,int bitDepth)
+    // Sets the file-related variables, required for all
+    public static void setFileVars(String fileDir,String bmpRootName)
     {
-        dir = D;
-        name = Name;
+        // File Directory String (should include the File.separator)
+        dir = fileDir;
+        // The name that will serve as the base for all bitmap output
+        name = bmpRootName;
+    }
+
+    // Sets the pixel-related variables, required for all
+    public static void setBmpVars(int W,int H,int bitDepth)
+    {
         // Bitmap width in pixels
         w = W;
         // Bitmap height in pixels
         h = H;
         // Bits Per Pixel
         bpp = bitDepth;
+        // Set bpp output
+        if(bpp==8 && bitFmtOutSet==false) bppOut=24;
+        if(bpp!=8 && bitFmtOutSet==false) bppOut=bpp;
         // Calculated # of pixels in bitmap
         pixels = w*h;
         // Data Size, calculated size of the input bitmap data
@@ -73,22 +81,27 @@ public class JBL
         palette = pal;
     }
 
-    // Sets the bit format, required for 16-bit conversions
-    public static void setBitFormat(String format)
+    // Sets the input bit format, required for 16-bit conversions
+    public static void set16BitFmtIn(String bitFormat)
     {
-        bitFmt = format;
+        bitFmtIn = bitFormat;
+        bitFmtOut = bitFormat;
+    }
+
+    // Sets bit format output, required for a bppOut != bpp
+    // 8bit input will default to 24bit output if this is not set
+    public static void setBitFmtOut(String bitFormat)
+    {
+        bitFmtOut = bitFormat;
+        if(bitFmtOut.equals(RGB24)) bppOut=24;
+        if(!bitFmtOut.equals(RGB24)) bppOut=16;
+        bitFmtOutSet = true;
     }
 
     // Sets length of largest # & returns it, required for makeBMP(byte[],int)
     public static int setImgSetSize(int numberOfImages)
     {
         return nLen = String.valueOf(numberOfImages).length();
-    }
-
-    // Sets BMP output to 16-bit, required for toRGB16() (not implemented yet)
-    public static void set16BitOutput()
-    {
-        bppOut = 16;
     }
 
     // ######################### class mutators: end #########################
@@ -110,7 +123,7 @@ public class JBL
     {
         byte[] temp24 = toRGB24(rawPixels);
         if(bppOut==16)
-            return addPadding(toRGB16(temp24), 2);
+            return addPadding((toRGB16(temp24)), 2);
         else
             return addPadding(temp24, 3);
     }
@@ -136,7 +149,7 @@ public class JBL
             }
         }
         // ######################## 16-bit Conversions ########################
-        else if(bpp==16 && bitFmt.equals(RGB555))
+        else if(bpp==16 && bitFmtIn.equals(RGB555))
         {
             // RGB555 (5 bits per color) stored in 2 bytes
             for(int i = 0; i < pixels; i++)
@@ -145,41 +158,43 @@ public class JBL
                 int x=i*2, y=i*3;
                 byte b1=rawBytes[x], b2=rawBytes[x+1];
                 // assign the bits inside the 2 bytes to r, g, b vars
-                int r = (b2 & 0x7C) << 1;
-                int g = ((b2 & 0x03) << 6) | ((b1 & 0xE0) >> 2);
                 int b = (b1 & 0x1F) << 3;
+                int g = ((b2 & 0x03) << 6) | ((b1 & 0xE0) >> 2);
+                int r = (b2 & 0x7C) << 1;
                 // mirror the 5 bits to 3 empty ones to get the right 8bit vals
                 r = r | r >> 5;
                 g = g | g >> 5;
                 b = b | b >> 5;
-                // change the int vars to bytes vars and add them to px array
+                // change the int vars to bytes vars & add them to px array add
+                // them in reverse order b/c that is the way format is, ugh
                 px[y+0] = (byte)b;
                 px[y+1] = (byte)g;
                 px[y+2] = (byte)r;
             }
         }
-        else if(bpp==16 && bitFmt.equals(RGB565))
+        else if(bpp==16 && bitFmtIn.equals(RGB565))
         {
-            // RGB565 stored in 2 bytes
+            // RGB565 stored in 2 bytes (as bgr)
             for(int i = 0; i < pixels; i++)
             {
                 int x=i*2, y=i*3;
                 byte b1=rawBytes[x], b2=rawBytes[x+1];
                 // assign the bits inside the 2 bytes to r, g, b vars
-                int r = (b2 & 0xF8);
-                int g = ((b2 & 0x07) << 5) | ((b1 & 0xE0) >> 3);
                 int b = (b1 & 0x1F) << 3;
+                int g = ((b2 & 0x07) << 5) | ((b1 & 0xE0) >> 3);
+                int r = (b2 & 0xF8);
                 // mirror the color bits to the empty bits for correct 8bit vals
                 r = r | r >> 5;
                 g = g | g >> 6;
                 b = b | b >> 5;
-                // change the int vars to bytes vars and add them to px array
+                // change the int vars to bytes vars & add them to px array add
+                // them in reverse order b/c that is the way format is, ugh
                 px[y+0] = (byte)b;
                 px[y+1] = (byte)g;
                 px[y+2] = (byte)r;
             }
         }
-        else if(bpp==16 && bitFmt.equals(ARGB16))
+        else if(bpp==16 && bitFmtIn.equals(ARGB16))
         {
             // ARGB16 (ARGB4444) (4 bits per color) stored in 2 bytes
             // bitmaps don't support transparency, so even though this format is
@@ -198,7 +213,8 @@ public class JBL
                 r = r | r >> 4;
                 g = g | g >> 4;
                 b = b | b >> 4;
-                // change the int vars to bytes vars and add them to px array
+                // change the int vars to bytes vars & add them to px array add
+                // them in reverse order b/c that is the way format is, ugh
                 px[y+0] = (byte)b;
                 px[y+1] = (byte)g;
                 px[y+2] = (byte)r;
@@ -212,52 +228,148 @@ public class JBL
         return px;
     }
 
-    // Converts standard 24-bit BMP pixels to 16-bit (RGB565) (TODO 1.0.0)
-    public static byte[] toRGB16(byte[] bgr24)
+    // Converts standard 24-bit BMP pixels to 16-bit
+    public static byte[] toRGB16(byte[] rgb24)
     {
-        byte[] bgr16 = new byte[pixels*2];
-        for(int i = 0; i < pixels; i++)
+        byte[] rgb16 = new byte[pixels*2];
+        if(bitFmtOut.equals(RGB555))
         {
-            int x=i*3, y=i*2;
-            int b = bgr24[x], g = bgr24[x+1], r = bgr24[x+2];
+            // RGB24 to RGB555 (5 bits per color) stored in 2 bytes
+            for(int i=0; i < pixels; i++)
+            {
+                int x=i*2, y=i*3;
+                byte b=rgb24[y],g=rgb24[y+1],r=rgb24[y+2];
+                int b1 = ((g<<2) & 0xE0) | ((b>>3) & 0x1F);
+                int b2 = ((r>>1) & 0x7C) | ((g>>6) & 0x03);
+                // change the ints to byte vars and add them to rgb16 array
+                rgb16[x+0] = (byte)b1;
+                rgb16[x+1] = (byte)b2;
+            }
         }
-        return bgr16;
+        else if(bitFmtOut.equals(ARGB16))
+        {
+            // RGB24 to ARGB16 stored in 2 bytes
+            for(int i = 0; i < pixels; i++)
+            {
+                int x=i*2, y=i*3;
+                byte b=rgb24[y],g=rgb24[y+1],r=rgb24[y+2];
+                // assign the a, r, g, b vars to 2 bytes
+                int b1 = (g & 0xF0) | (b & 0x0F);
+                int b2 = (r & 0x0F);
+                // change the ints to byte vars and add them to rgb16 array
+                rgb16[x+0] = (byte)b1;
+                rgb16[x+1] = (byte)b2;
+            }
+        }
+        else
+        {
+            // RGB24 to RGB565 Standard 16bit Format for bitmaps
+            for(int i=0; i < pixels; i++)
+            {
+                int x=i*2, y=i*3;
+                byte b=rgb24[y],g=rgb24[y+1],r=rgb24[y+2];
+                int b1 = ((g<<3) & 0xE0) | ((b>>3) & 0x1F);
+                int b2 = (r & 0xF8) | ((g>>5) & 0x07);
+                // change the ints to byte vars and add them to rgb16 array
+                rgb16[x+0] = (byte)b1;
+                rgb16[x+1] = (byte)b2;
+            }
+        }
+        return rgb16;
     }
 
     // add the necessary scanline byte padding required by bitmaps
-    public static byte[] addPadding(byte[] bgr, int BppOut)
+    public static byte[] addPadding(byte[] rgb, int BppOut)
     {
-        int colorBytes = w*BppOut, padBytes = (4-(w*BppOut%4))%4;
-        int scanline = colorBytes+padBytes, size = scanline*h, dex1=0, dex2=0;
-        byte[] pixelBytes = new byte[size];
+        int colorBytes=w*BppOut, padBytes=(4-(w*BppOut%4))%4;
+        int scanline=colorBytes+padBytes, size=scanline*h, dex1=0, dex2=0;
+        byte[] scanlines = new byte[size];
         byte padByte = 0x00;
+        if(padBytes!=0)
+        {
+            for(int i=0; i < h; i++)
+            {
+                for(int x=0; x < scanline; x++)
+                {
+                    if(x < colorBytes)
+                        scanlines[dex1++] = rgb[dex2++];
+                    else
+                        scanlines[dex1++] = padByte;
+                }
+            }
+        }
+        else
+        {
+            scanlines = rgb;
+        }
+        return scanlines;
+    }
+
+    // remove the scanline byte padding required by bitmaps
+    public static byte[] stripPadding(byte[] scanlines)
+    {
+        int colorBytes=w*(bpp/8), padBytes=(4-(w*(bpp/8)%4))%4;
+        int scanline=colorBytes+padBytes, size=colorBytes*h, dex1=0, dex2=0;
+        byte[] rgb = new byte[size];
+        if(padBytes!=0)
+        {
+            for(int i=0; i < h; i++)
+            {
+                for(int x=0; x < scanline; x++)
+                {
+                    if(x<colorBytes)
+                        rgb[dex1++] = scanlines[dex2++];
+                    else
+                        dex2++;
+                }
+            }
+        }
+        else
+        {
+            rgb = scanlines;
+        }
+        return rgb;
+    }
+
+    // For BMP's convoluted format to work well the data needs to written
+    // bottom-up, with the last scanline at the top and vice versa.
+    public static byte[] reverseRows(byte[] topDownLines)
+    {
+        int scanline=(topDownLines.length / h), dex1=0, dex2=0;
+        byte[] trueScanlines = new byte[topDownLines.length];
+        byte[][] scanlines = new byte[h][scanline];
         for(int i=0; i < h; i++)
         {
             for(int x=0; x < scanline; x++)
             {
-                if(x < colorBytes)
-                    pixelBytes[dex1++] = bgr[dex2++];
-                else
-                    pixelBytes[dex1++] = padByte;
+                scanlines[i][x] = topDownLines[dex1++];
             }
         }
-        return pixelBytes;
+        int lastLine = h - 1;
+        for(int i=0; i < h; i++)
+        {
+            for(int x=0; x < scanline; x++)
+            {
+                trueScanlines[dex2++] = scanlines[lastLine-i][x];
+            }
+        }
+        return trueScanlines;
     }
 
     // Makes the final BMP image array
-    public static byte[] setBMP(byte[] pixels, boolean vertFlip)
+    public static byte[] setBMP(byte[] scanlines, boolean vertFlip)
     {
         // Set BMP output size
-        int imgSize = pixels.length+54;
+        int imgSize = scanlines.length+54;
         byte[] bmp = new byte[imgSize];
         // Get the BMP header
-        byte[] bmpHeader = setHeader(imgSize,pixels,vertFlip);
+        byte[] bmpHeader = setHeader(imgSize,scanlines,vertFlip);
         // Join the header and image data arrays then return
-        return joinImgParts(imgSize,bmpHeader,pixels);
+        return joinImgParts(imgSize,bmpHeader,scanlines);
     }
 
     // Make/Set the BMP header array
-    public static byte[] setHeader(int bsize, byte[] px, boolean hFlip)
+    public static byte[] setHeader(int bsize, byte[] data, boolean hFlip)
     {
         // if needed, flip image vertically, the easy way, make height negative
         if(hFlip) h = -h;
@@ -276,7 +388,7 @@ public class JBL
         addInt2Arr2(26,hdr,1);
         addInt2Arr2(28,hdr,bppOut);
         addInt2Arr4(30,hdr,0);
-        addInt2Arr4(34,hdr,px.length);
+        addInt2Arr4(34,hdr,data.length);
         addInt2Arr4(38,hdr,2835);
         addInt2Arr4(42,hdr,2835);
         addInt2Arr4(46,hdr,0);
@@ -284,17 +396,17 @@ public class JBL
         return hdr;
     }
 
-    // combine the header and pixel arrays & return as single new array
-    public static byte[] joinImgParts(int bsize, byte[] hdr, byte[] px)
+    // combine the header and scanline arrays & return as single new array
+    public static byte[] joinImgParts(int bsize, byte[] hdr, byte[] data)
     {
         byte[] bitmap = new byte[bsize];
         for(int i=0; i < hdr.length; i++)
         {
             bitmap[i] = hdr[i];
         }
-        for(int i=0; i < px.length; i++)
+        for(int i=0; i < data.length; i++)
         {
-            bitmap[i+54] = px[i];
+            bitmap[i+54] = data[i];
         }
         return bitmap;
     }
@@ -310,7 +422,7 @@ public class JBL
         }
         catch(Exception ex)
         {
-            out.println("Something donked up (makeBMP):\n"+ex);
+            out.println("Error in (makeBMP):\n"+ex);
         }
     }
 
@@ -326,7 +438,7 @@ public class JBL
         }
         catch(Exception ex)
         {
-            out.println("Something donked up (makeBMPSet):\n"+ex);
+            out.println("Error in (makeBMPSet):\n"+ex);
         }
     }
 

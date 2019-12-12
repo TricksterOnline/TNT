@@ -1,7 +1,7 @@
 /*
 Extract.java: this file is part of the TNT program.
 
-Copyright (C) 2014-2018 Libre Trickster Team
+Copyright (C) 2014-2020 Libre Trickster Team
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@ GNU General Public License for more details.
 import java.io.*;
 import java.nio.*;
 import java.nio.file.*;
-import static java.lang.System.in;
 import static java.lang.System.out;
 import static java.lang.System.err;
 /**
@@ -34,91 +33,88 @@ Development Priority: HIGHEST
 public class Extract
 {
     // class variables
-    public static int nBMP=0, bpp=0, pos=0, dlen=0, w=0, h=0, nlen=0, dcount=0;
-    public static boolean compressed=false;
-    public static byte[][] pal;
-    public static int[] offsets;
-    public static String name, dir, dirname;
+    public static int pos=0,dlen=0,w=0,h=0,nlen=0,dcount=0,bmpNxt=0;
+    public static boolean compressed=false, dcBool=false;
+    public static byte x00=(byte)0,xFF=(byte)255,x1F=(byte)31,x7C=(byte)124;
 
     // constructor for Extract class
-    public Extract(byte[] ba, File file)
+    public Extract(byte[] ba, NORI nf, boolean subs)
     {
         try
         {
-            name = file.getName();
-            dirname = name.replace('.','_');
-            // Wraps byte array in little-endian bytebuffer
-            ByteBuffer fbb = ByteBuffer.wrap(ba).order(ByteOrder.LITTLE_ENDIAN);
-
+            ByteBuffer bb = mkLEBB(ba);
             // Analyze and assign class vars
-            runAnalyzer(fbb);
+            Analyzer a = new Analyzer(bb,nf);
+            compressed = a.compressed;
 
             // Make the directory where we will extract the bmp to
-            dir = file.getParent()+File.separator+dirname+File.separator;
-            File d = new File(dir);
+            File d = new File(nf.exdir);
             Files.createDirectories(d.toPath());
 
             // Initialize Java Bitmap Library
             JBL bl = new JBL();
-            bl.setBitFormat("RGB555");
-            nlen = bl.setImgSetSize(nBMP);
-            bl.setPalette(pal);
+            bl.setFileVars(nf.exdir,nf.name);
+            bl.set16BitFmtIn("RGB555");
+            nlen = bl.setImgSetSize(nf.numBMP);
+            bl.setPalette(nf.palette);
 
             // Extract the images
-            out.println("Extracting Bitmaps:");
-            for(int i=0; i < nBMP; i++)
+            out.println("Extracting Bitmaps...");
+            for(int i=0; i < nf.numBMP; i++)
             {
-                int n=i+1, bmpNow=offsets[i], bmpNxt=offsets[i+1];
-                out.printf("#%0"+nlen+"d, offset: %d\n",n,bmpNow);
-                // get data count (determines if subset exists)
-                dcount = fbb.getInt();
+                if(nf.bmpOffsets[i+1]!=0)
+                    bmpNxt=nf.bmpOffsets[i+1] + nf.bpos;
+                else
+                    bmpNxt=nf.bmpOffsets[i+1];
+                // get data count (if larger than 1, subset exists)
+                dcount = bb.getInt();
+                dcBool = (dcount >1);
                 for(int x=1; x <= dcount; x++)
                 {
                     // get/set the standard info about the bmp
-                    setBitmapData(fbb);
-                    bl.setJBLVars(dir,name,w,h,bpp);
-                    // Next 4 lines: get img data, convert to BMP24, & prep BMP
-                    byte[] rawBytes = bl.getImgBytes(fbb,dlen);
-                    byte[] bytes = decompressor(rawBytes);
+                    setBitmapData(bb);
+                    bl.setBmpVars(w,h,nf.bpp);
+                    // Next 4 lines: get img data, prep pixel data, & prep BMP
+                    byte[] rawBytes = bl.getImgBytes(bb,dlen);
+                    byte[] bytes = decompressor(rawBytes,nf);
                     byte[] pixels = bl.toStdRGB(bytes);
-                    byte[] bmp = bl.setBMP(pixels,true);
+                    // Ntree* uses top-down bmp scanlines in the NORI format
+                    byte[] bmp = bl.setBMP(bl.reverseRows(pixels),false);
                     // Write the new BMP into existence
-                    if(dcount >1)
-                    {
-                        String subName = String.format("_%02d",x);
-                        bl.makeBMP(bmp,n,subName);
-                    }
+                    if(dcBool && subs)
+                        bl.makeBMP(bmp,i+1,String.format("_%02d",x));
                     else
-                    {
-                        bl.makeBMP(bmp,n,"");
-                    }
+                        bl.makeBMP(bmp,i+1,"");
                 }
+                pos = bb.position();
                 // Ensure the buffer is in the right position for the next bmp
-                if(pos!=bmpNxt && bmpNxt!=0) fbb.position(bmpNxt);
+                if(pos!=bmpNxt && bmpNxt!=0) bb.position(bmpNxt);
             }
+            out.println("Extraction Complete.\n");
         }
         catch(Exception ex)
         {
-            out.println("Something donked up (EM):\n"+ex);
+            out.println("Error in (EM):\n"+ex);
         }
     }
 
     // Assign the BitmapData header info
-    public static void setBitmapData(ByteBuffer bb)
+    private static void setBitmapData(ByteBuffer bb)
     {
-        // assign: data length, width, height; then skip unknowns
+        // assign: data length, width, height; then temporarily assign unknowns
         dlen = bb.getInt();
         w = bb.getInt();
         h = bb.getInt();
-        pos = bb.position()+12;
-        bb.position(pos);
+        int bParam4 = bb.getInt();
+        int pos_x = bb.getInt();
+        int pos_y = bb.getInt();
     }
 
     // Minor interface for decompress() to make code cleaner
-    public static byte[] decompressor(byte[] rawBytes)
+    private static byte[] decompressor(byte[] rawBytes, NORI nf)
     {
         if(compressed)
-            return decompress(rawBytes);
+            return decompress(rawBytes,nf);
         else
             return rawBytes;
     }
@@ -126,15 +122,14 @@ public class Extract
     // Custom Run-length Encoding Decompression function.
     // Each scanline is defined by a encodedSize, then a cycle of background and
     // foreground pixel data that is repeated until the encodedSize is met.
-    public static byte[] decompress(byte[] input)
+    private static byte[] decompress(byte[] input, NORI nf)
     {
         // Initialize vars: encodedSize, bg pixels, fg pixels, Bytes/px, fg*Bpp
-        int encodedSize=0, bg=0, fg=0, Bpp=(bpp/8), fgxBpp=0;
-        byte x00=(byte)0, x1F=(byte)31, x7C=(byte)124, xFF=(byte)255;
-        byte[] result = new byte[w*h*Bpp], bg1= {x1F,x7C}, bg2= {xFF,x00,xFF};
+        int encodedSize=0, bg=0, fg=0, Bpp=(nf.bpp/8), fgxBpp=0;
+        byte[] output = new byte[w*h*Bpp], bg1= {x1F,x7C}, bg2= {xFF,x00,xFF};
         // Create bytebuffers for the input and output arrays
-        ByteBuffer bi = ByteBuffer.wrap(input).order(ByteOrder.LITTLE_ENDIAN);
-        ByteBuffer bo = ByteBuffer.wrap(result).order(ByteOrder.LITTLE_ENDIAN);
+        ByteBuffer bi = mkLEBB(input), bo = mkLEBB(output);
+
         for(int i=0; i < h; i++)
         {
             // set the encodedSize, then subtract 2, since it includes itself
@@ -167,20 +162,13 @@ public class Extract
                 encodedSize -= 4+fgxBpp;
             }
         }
-        return result;
+        return output;
     }
 
-    // Runs Analyzer & passes vars to local globals.
-    public static void runAnalyzer(ByteBuffer bb)
+    // Shorthand function to wrap a byte array in a little-endian bytebuffer
+    private static ByteBuffer mkLEBB(byte[] ba)
     {
-        // Analyze the file
-        Analyzer a = new Analyzer(bb, name);
-        // Load the necessary vars
-        nBMP = a.numBMP;
-        bpp = a.bmpBitDepth;
-        pos = a.pos;
-        compressed = a.compressed;
-        pal = a.palette;
-        offsets = a.bmpOffsets;
+        // this long syntax call is why this function exists ;)
+        return ByteBuffer.wrap(ba).order(ByteOrder.LITTLE_ENDIAN);
     }
 }
