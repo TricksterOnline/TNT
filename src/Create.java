@@ -37,7 +37,7 @@ public class Create
     // class variables
     public static int maxNoF=0,maxNoP=0,pos=0;
     public static int pdex0=0,pdex1=0,pdex2=0,pdex3=0,pdex4=0,pdex5=0,pdex6=0;
-    public static byte[] nfba, palette, imgData;
+    public static byte[] nfba, palette, imgData, fba;
     public static int[] bmp_id, point_x, point_y, opacity, flip_axis;
     public static int[] blend_mode, flag_param;
     // constructor for Create class
@@ -71,7 +71,7 @@ public class Create
             // Add Animation Offsets
             addAnimOffsets(nbb,nf);
             // Get XFB
-            getXFB(nf);
+            nf.xfb = file2BA(nf.dir+"xfb"+nf.noriVer+".bin");
             // Add Anims, Frames, Plane Data, & xfb
             addAnims(nbb,nf);
             out.println("Finalizing file...");
@@ -116,21 +116,9 @@ public class Create
         bb.putInt(nf.gsize);
     }
 
-    private static void getPal(NORI nf)
-    {
-        try
-        {
-            String filename = nf.dir+nf.dname+"_pal.bin";
-            nf.palBytes = Files.readAllBytes((new File(filename)).toPath());
-        }
-        catch(Exception ex)
-        {
-            out.println("Error in (getPal):\n"+ex);
-        }
-    }
-
     private static void addPalSection(ByteBuffer bb, NORI nf)
     {
+
         bb.putInt(nf.psig);
         bb.putInt(nf.palVer);
         bb.putInt(nf.pParam1);
@@ -139,7 +127,8 @@ public class Create
         bb.putInt(nf.pParam4);
         bb.putInt(nf.divided);
         bb.putInt(nf.psize);
-        bb.put(nf.palBytes);
+        nf.pb = file2BA(nf.dir+nf.name+"_pal.bin");
+        bb.put(nf.pb);
         if(nf.psize==808)
         {
             bb.putInt(nf.mainS);
@@ -153,6 +142,60 @@ public class Create
         {
             bb.putInt(nf.bmpOffsets[i]);
         }
+    }
+
+    private static byte[] getImgData(String bmpDir, NORI nf)
+    {
+        JBL bl = new JBL();
+        // Setup byte array where pixel data will go
+        int ids=0;
+        for(int i=0; i < nf.numBMP; i++)
+        {
+            ids += nf.bmpSpecs[i][1];
+        }
+        byte[] ba = new byte[ids];
+        ByteBuffer bb = mkLEBB(ba);
+        try
+        {
+            // Gather the list of bmp files
+            File dataDir = new File(bmpDir);
+            String[] tmpFL = dataDir.list();
+            String[] fl = cleanFL(tmpFL,nf);
+            // Alphabetic ordering
+            Arrays.sort(fl);
+            // Pull the file contents into a byte array for later use
+            out.println("Absorbing BMP files:");
+            for(int i=0; i < fl.length; i++)
+            {
+                // output full file name
+                out.println(bmpDir+fl[i]);
+                // read bmp into a byte array, then wrap in a bytebuffer
+                byte[] bmp = file2BA(bmpDir+fl[i]);
+                ByteBuffer bbb = mkLEBB(bmp);
+                // Strip the header off the image
+                bbb.position(10);
+                int pxStart = bbb.getInt();
+                //out.println("pxStart: "+pxStart);
+                int pxLen = bbb.capacity() - pxStart;
+                //out.println("pxLength: "+pxLen);
+                bbb.position(pxStart);
+                byte[] hdrless = new byte[pxLen];
+                bbb.get(hdrless,0,pxLen);
+                // Set BMP header vars from xml data
+                bl.setBmpVars(nf.bmpSpecs[i][2],nf.bmpSpecs[i][3],nf.bpp);
+                // NORI format uses top-down scanlines
+                byte[] revData = bl.reverseRows(hdrless);
+                // Strip any padding on the pixels
+                byte[] rawData = bl.stripPadding(revData);
+                // Add raw data to ba byte array
+                bb.put(rawData);
+            }
+        }
+        catch(Exception ex)
+        {
+            out.println("Error in (getImgData):\n"+ex);
+        }
+        return ba;
     }
 
     private static void addBmpSection(ByteBuffer bb, ByteBuffer dbb, NORI nf)
@@ -242,72 +285,6 @@ public class Create
         }
         // Skip through xtraFrameBytes
         bb.put(nf.xfb);
-    }
-
-    private static void getXFB(NORI nf)
-    {
-        try
-        {
-            String filename = nf.dir+"xfb"+nf.noriVer+".bin";
-            nf.xfb = Files.readAllBytes((new File(filename)).toPath());
-        }
-        catch(Exception ex)
-        {
-            out.println("Error in (getXFB):\n"+ex);
-        }
-    }
-
-    private static byte[] getImgData(String bmpDir, NORI nf)
-    {
-        JBL bl = new JBL();
-        // Setup byte array where pixel data will go
-        int ids=0;
-        for(int i=0; i < nf.numBMP; i++)
-        {
-            ids += nf.bmpSpecs[i][1];
-        }
-        byte[] ba = new byte[ids];
-        ByteBuffer bb = mkLEBB(ba);
-        try
-        {
-            // Gather the list of bmp files
-            File dataDir = new File(bmpDir);
-            String[] tmpFL = dataDir.list();
-            String[] fl = cleanFL(tmpFL,nf);
-            // Alphabetic ordering
-            Arrays.sort(fl);
-            // Pull the file contents into a byte array for later use
-            out.println("Absorbing BMP files:");
-            for(int i=0; i < fl.length; i++)
-            {
-                // Make the string into a file & read its bytes into the array
-                String file = bmpDir+fl[i];
-                out.println(file);
-                byte[] bmp = Files.readAllBytes((new File(file)).toPath());
-                ByteBuffer bbb = mkLEBB(bmp);
-                // Strip the header off the image
-                bbb.position(10);
-                int pxStart = bbb.getInt();
-                //out.println("pxStart: "+pxStart);
-                int pxLen = bbb.capacity() - pxStart;
-                //out.println("pxLength: "+pxLen);
-                bbb.position(pxStart);
-                byte[] hdrless = new byte[pxLen];
-                bbb.get(hdrless,0,pxLen);
-                // Strip any padding on the pixels
-                bl.setBmpVars(nf.bmpSpecs[i][2],nf.bmpSpecs[i][3],nf.bpp);
-                // NORI format uses top-down scanlines
-                byte[] revData = bl.reverseRows(hdrless);
-                byte[] rawData = bl.stripPadding(revData);
-                // Add raw data to ba byte array
-                bb.put(rawData);
-            }
-        }
-        catch(Exception ex)
-        {
-            out.println("Error in (getImgData):\n"+ex);
-        }
-        return ba;
     }
 
     // Cleans the file list, if user is stupid, to make sure only bmp get in
@@ -436,7 +413,7 @@ public class Create
         }
     }
 
-    // Another function that makes the code look better & have less duplication
+    // An anti-duplication + better readability function
     private static int getMax(int[] array)
     {
         int max=0;
@@ -475,12 +452,14 @@ public class Create
         return tmp;
     }
 
+    // An anti-duplication + better readability function
     private static Element getElementByTagName(Document cfg,String tagName)
     {
         Node node0 = cfg.getElementsByTagName(tagName).item(0);
         return (Element) node0;
     }
 
+    // An anti-duplication + better readability function
     private static int getIntVal(Element parentE,String tagName)
     {
         Node node0 = parentE.getElementsByTagName(tagName).item(0);
@@ -490,11 +469,24 @@ public class Create
     // Shorthand function to wrap a byte array in a little-endian bytebuffer
     private static ByteBuffer mkLEBB(byte[] ba)
     {
-        // this long syntax call is why this function exists ;)
         return ByteBuffer.wrap(ba).order(ByteOrder.LITTLE_ENDIAN);
     }
 
-    // Lets make my life easier and save some code space
+    // An anti-duplication + better readability function
+    private static byte[] file2BA(String fStr)
+    {
+        try
+        {
+            fba = Files.readAllBytes((new File(fStr)).toPath());
+        }
+        catch(Exception ex)
+        {
+            out.println("Error in (file2BA):\n"+ex);
+        }
+        return fba;
+    }
+
+    // An anti-duplication + better readability function
     private static int toInt(String str)
     {
         int i=0;

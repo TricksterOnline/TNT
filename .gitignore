@@ -14,13 +14,18 @@
 *.jar
 *.war
 *.ear
+*.nar
 *.zip
 *.tar.gz
 *.rar
+*.7z
 
 # virtual machine crash logs
 hs_err_pid*
 
 # Folders
+/0
+/x
+/xtra
 /extra
 /bin

@@ -168,7 +168,6 @@ public class Extract
     // Shorthand function to wrap a byte array in a little-endian bytebuffer
     private static ByteBuffer mkLEBB(byte[] ba)
     {
-        // this long syntax call is why this function exists ;)
         return ByteBuffer.wrap(ba).order(ByteOrder.LITTLE_ENDIAN);
     }
 }

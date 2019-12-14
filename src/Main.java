@@ -1,6 +1,6 @@
 /*
-The NORI Tool (TNT), is a program designed to extract and possibly create NORI
-files for the Libre Trickster project.
+The NORI Tool (TNT), is a program designed to extract & create NORI files for
+the Libre Trickster project.
 
 Copyright (C) 2014-2020 Libre Trickster Team
 
@@ -82,10 +82,9 @@ public class Main
     // access it. Does nothing else. No need to name the file after it ;)
     private static byte[] byteLoader(File file)
     {
-        long numBytes = file.length();
         // Max byte array size is ~2GB, which is much longer than any existing
         // NORI file so we don't have to check for a file that is too big.
-        byte[] bytes = new byte[(int)numBytes];
+        byte[] bytes = new byte[(int)file.length()];
         try
         {
             // Loads file into byte array

@@ -15,7 +15,6 @@ GNU General Public License for more details.
 */
 import java.io.*;
 import static java.lang.System.out;
-import static java.lang.System.getProperty;
 /**
 Class Description:
 A structure-like class for storing a NORI file's data neatly.
@@ -30,7 +29,7 @@ public class NORI
 {
     // class variables
     public static File nf;
-    public static String name,dname,dir,exdir;
+    public static String name,dname,dir,exdir,fs=File.separator;
     // special NORI variables
     public static int fsig = 0;
     public static int noriVer = 0;
@@ -63,7 +62,7 @@ public class NORI
     public static int pParam4 = 0;
     public static int divided = 0;
     public static int psize = 0;
-    public static byte[] palBytes;
+    public static byte[] pb;
     public static byte[][] palette;
     public static int mainS = 111;
     public static int mainE = 254;
@@ -90,21 +89,23 @@ public class NORI
     {
         name = nf.getName();// Plain file name
         // Using cfg file, which is the same name & dir, just 4 extra characters
-        if(src!=0) name = name.substring(0,name.length()-4);
-        if(!(name.endsWith(".bac"))||!(name.endsWith(".nri"))) 
+        if(src!=0)
         {
-            out.println("Error: Config file named incorrectly!");
-            System.exit(1);
+            name = name.substring(0,name.length()-4);
+            if(!(name.endsWith(".bac")||name.endsWith(".nri")))
+            {
+                out.println("Error: Config file named incorrectly!");
+                System.exit(1);
+            }
         }
         dname = name.replace('.','_');// Name without dots (useful)
-        dir = nf.getParent()+File.separator;// Directory the file is in
-        exdir = dir+dname+File.separator;// Extraction directory (where bmp go)
+        dir = nf.getParent()+fs;// Directory the file is in
+        exdir = dir+dname+fs;// Extraction directory (where bmp go)
     }
 
     public static void checkDir()
     {
-        String badDir = "null"+File.separator;
-        if(dir.equals(badDir)) dir = getProperty("user.dir")+File.separator;
-        exdir = dir+dname+File.separator;
+        if(dir.equals("null"+fs)) dir=System.getProperty("user.dir")+fs;
+        exdir = dir+dname+fs;
     }
 }

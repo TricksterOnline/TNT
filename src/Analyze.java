@@ -57,7 +57,7 @@ public class Analyze
                 if(nf.hasPalette==1)
                 {
                     File palFile = new File(nf.dir+nf.name+"_pal.bin");
-                    Files.write(palFile.toPath(),nf.palBytes);
+                    Files.write(palFile.toPath(),nf.pb);
                 }
             }
         }

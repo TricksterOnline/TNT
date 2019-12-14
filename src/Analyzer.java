@@ -148,14 +148,14 @@ public class Analyzer
     // follow parts here. Colors are stored in BGR order. Take it in stride.
     private static byte[][] setPalette(ByteBuffer bb, NORI nf)
     {
-        nf.palBytes = new byte[768];
+        nf.pb = new byte[768];
         byte[] newBG = {(byte)255,(byte)0,(byte)255};
         byte[][] colors = new byte[256][3];
         try
         {
-            // gets/puts the palette bytes into the palBytes array
-            bb.get(nf.palBytes,0,768);
-            ByteBuffer pbb = mkLEBB(nf.palBytes);
+            // gets/puts the palette bytes into the pb array
+            bb.get(nf.pb,0,768);
+            ByteBuffer pbb = mkLEBB(nf.pb);
             // standardize the bg to neon pink
             pbb.put(newBG,0,3);
             // Place the bytes in the dual array 'colors' that groups the rgb
@@ -163,9 +163,9 @@ public class Analyzer
             for(int i = 0; i < 256; i++)
             {
                 int x = i*3, b=x+0, g=x+1, r=x+2;
-                colors[i][0] = nf.palBytes[r];
-                colors[i][1] = nf.palBytes[g];
-                colors[i][2] = nf.palBytes[b];
+                colors[i][0] = nf.pb[r];
+                colors[i][1] = nf.pb[g];
+                colors[i][2] = nf.pb[b];
             }
         }
         catch(Exception ex)
@@ -231,7 +231,7 @@ public class Analyzer
     // Prepare the animation-related arrays
     private static void prepAnimVars(NORI nf)
     {
-        // large array sizes need for dealing with unknown input
+        // large array sizes needed for dealing with unknown input
         animOffsets = new int[nf.anims+1];
         nf.animOffsets = new int[nf.anims+1];
         nf.animName = new String[nf.anims];
@@ -411,7 +411,6 @@ public class Analyzer
     // Shorthand function to wrap a byte array in a little-endian bytebuffer
     private static ByteBuffer mkLEBB(byte[] ba)
     {
-        // this long syntax call is why this function exists ;)
         return ByteBuffer.wrap(ba).order(ByteOrder.LITTLE_ENDIAN);
     }
 }
