@@ -23,9 +23,6 @@
 # virtual machine crash logs
 hs_err_pid*
 
-# Folders
+# Custom
 /0
-/x
-/xtra
-/extra
-/bin
+/src/*.sh

@@ -1,5 +1,4 @@
-NORI Format Specification
-=========================
+# NORI Format Specification
 
 <pre>
 Copyright (C) 2014-2020 Libre Trickster Team
@@ -34,19 +33,27 @@ After zlib INFLATE or if uncompressed to begin with, you can start reading the
 NORI file as it is suppose to look:
 </pre><pre>
 +------------------------------------------------------------------------------+
-| NORI Header                                                                  |
+| NORI Header                                                        (40 Bytes)|
 +--------------+-----+---------------------------------------------------------+
 | Name         |Bytes| Description                                             |
 +--------------+-----+---------------------------------------------------------+
 | signature    |  4  | NORI file signature                                     |
 +--------------+-----+---------------------------------------------------------+
-| version/type |  4  | NORI format version (300, 301, 302, 303)                |
+| version      |  4  | NORI format version (300, 301, 302, 303)                |
 +--------------+-----+---------------------------------------------------------+
-| nParam_01-05 | 20  | Unidentified data                                       |
+| nParam1      |  4  | Unidentified data (ex: majority of mapbgeffect NORI)    |
++--------------+-----+---------------------------------------------------------+
+| nParam2      |  4  | Unidentified data (ex: majority of mapbgeffect NORI)    |
++--------------+-----+---------------------------------------------------------+
+| nParam3      |  4  | negative var of some sort (ex: most of the mapbgeffect) |
++--------------+-----+---------------------------------------------------------+
+| nParam4      |  4  | Unidentified data (ex: majority of mapbgeffect NORI)    |
++--------------+-----+---------------------------------------------------------+
+| nParam5      |  4  | Unidentified data (ex: majority of mapbgeffect NORI)    |
 +--------------+-----+---------------------------------------------------------+
 | anims        |  4  | Number of included animations                           |
 +--------------+-----+---------------------------------------------------------+
-| withoutGawi  |  4  | fsize - GAWI Section size                               |
+| withoutGawi  |  4  | fsize - GAWI Section size  (i.e. w/o Gawi -> woGawi)    |
 +--------------+-----+---------------------------------------------------------+
 | fsize        |  4  | NORI file size                                          |
 +--------------+-----+---------------------------------------------------------+
@@ -57,7 +64,7 @@ NORI file as it is suppose to look:
 | GAWI SECTION                                                                 |
 +------------------------------------------------------------------------------+
 +------------------------------------------------------------------------------+
-| GAWI Header: Imageset Section Header                                         |
+| GAWI Header                                                        (44 Bytes)|
 +--------------+-----+---------------------------------------------------------+
 | Name         |Bytes| Description                                             |
 +--------------+-----+---------------------------------------------------------+
@@ -71,17 +78,23 @@ NORI file as it is suppose to look:
 +--------------+-----+---------------------------------------------------------+
 | hasPalette   |  4  | Palette usage flag (set to 1, if palette exists)        |
 +--------------+-----+---------------------------------------------------------+
-| gParam_04-07 | 16  | Unidentified data                                       |
+| gParam4      |  4  | Unidentified data (ex: majority of mapbgeffect NORI)    |
++--------------+-----+---------------------------------------------------------+
+| gParam5      |  4  | Unidentified data (ex: majority of mapbgeffect NORI)    |
++--------------+-----+---------------------------------------------------------+
+| gParam6      |  4  | Unidentified data (ex: majority of mapbgeffect NORI)    |
++--------------+-----+---------------------------------------------------------+
+| gParam7      |  4  | Unidentified data (ex: majority of mapbgeffect NORI)    |
 +--------------+-----+---------------------------------------------------------+
 | numBMP       |  4  | Number of images                                        |
 +--------------+-----+---------------------------------------------------------+
-| gsize        |  4  | Size of all image data combined                         |
+| gsize        |  4  | Size of entire GAWI section                             |
 +--------------+-----+---------------------------------------------------------+
 +------------------------------------------------------------------------------+
 | END OF GAWI HEADER                                                           |
 +------------------------------------------------------------------------------+
 +------------------------------------------------------------------------------+
-| Palette Data:  Palette Section (may or may not exist)                        |
+| Palette Data: Palette Section (may or may not exist)       (800 or 808 Bytes)|
 +--------------+-----+---------------------------------------------------------+
 | Name         |Bytes| Description                                             |
 +--------------+-----+---------------------------------------------------------+
@@ -92,25 +105,24 @@ NORI file as it is suppose to look:
 | pParam_01-04 | 16  | Unidentified data                                       |
 +--------------+-----+---------------------------------------------------------+
 | divided      |  4  | T/F flag for whether pal is divided into 2 sections.    |
-|              |     | They are:[base]&[main]; if =1, pal sect has 2 extra vars|
+|              |     | They are:[base]&[main]; if =1, mainStart & mainEnd exist|
 +--------------+-----+---------------------------------------------------------+
 | psize        |  4  | size of entire palette section                          |
 +--------------+-----+---------------------------------------------------------+
 | [RGB24DATA]  | 768 | raw palette data; see BitmapData                        |
 +--------------+-----+---------------------------------------------------------+
-| If psize=800, this is End of Palette Section. Otherwise, 2 more variables.   |
 +--------------+-----+---------------------------------------------------------+
-| main_start   |  4  | Palette index # that is the start of [main] section.    |
+| mainStart    |  4  | Palette index # that is the start of [main] section.    |
 |              |     | Standard value is 111. palette[111]                     |
 +--------------+-----+---------------------------------------------------------+
-| main_end     |  4  | Palette index # that is the end of [main] section.      |
+| mainEnd      |  4  | Palette index # that is the end of [main] section.      |
 |              |     | Standard value is 254. palette[254]                     |
 +--------------+-----+---------------------------------------------------------+
 +------------------------------------------------------------------------------+
 | END OF PALETTE DATA                                                          |
 +------------------------------------------------------------------------------+
 +------------------------------------------------------------------------------+
-| BMP Offsets: Bitmap Offset Address Info Section                              |
+| BMP Offsets                                                                  |
 +--------------+-----+---------------------------------------------------------+
 | Name         |Bytes| Description                                             |
 +--------------+-----+---------------------------------------------------------+
@@ -121,24 +133,25 @@ NORI file as it is suppose to look:
 | END OF BMP OFFSETS                                                           |
 +------------------------------------------------------------------------------+
 +------------------------------------------------------------------------------+
-| BitmapData: BMP Data For Each Image                                          |
+| BitmapData: BMP Data For Each Image                            (sod+28 Bytes)|
 +--------------+-----+---------------------------------------------------------+
 | Name         |Bytes| Description                                             |
 +--------------+-----+---------------------------------------------------------+
 | data_count   |  4  | When >1, img subset exists, subs lack a bmpOffset value |
+|              |     | When =0, it skips the rest of BitmapData                |
 +--------------+-----+---------------------------------------------------------+
 +--------------+-----+---------------------------------------------------------+
 | data_length  |  4  | data size(=sod)                                         |
 +--------------+-----+---------------------------------------------------------+
-| pic_width    |  4  | Image width (in pixels)                                 |
+| bmp_width    |  4  | Image width (in pixels)                                 |
 +--------------+-----+---------------------------------------------------------+
-| pic_height   |  4  | Image height (in pixels)                                |
+| bmp_height   |  4  | Image height (in pixels)                                |
 +--------------+-----+---------------------------------------------------------+
-| bParam_04    |  4  | Unidentified data (possibly a delay #)                  |
+| bParam4      |  4  | Unidentified data (possibly a delay #)                  |
 +--------------+-----+---------------------------------------------------------+
-| position_x   |  4  | The image's X position, usually 0                       |
+| bmp_x        |  4  | The image's X position, usually 0                       |
 +--------------+-----+---------------------------------------------------------+
-| position_y   |  4  | The image's Y position, usually 0                       |
+| bmp_y        |  4  | The image's Y position, usually 0                       |
 +--------------+-----+---------------------------------------------------------+
 |[RGB24Data]   | sod | 24bit img; bit fmt: B8G8R8 (3Bytes)                     |
 |[RGB16Data]   | sod | 16bit img; bit fmt: R5G5B5 [nRRRRRGG GGGBBBBB] (2Bytes) |
@@ -147,7 +160,9 @@ NORI file as it is suppose to look:
 +------------------------------------------------------------------------------+
 | END OF BMP DATA                                                              |
 +------------------------------------------------------------------------------+
-</pre><pre>
++------------------------------------------------------------------------------+
+| END OF GAWI SECTION                                                          |
++------------------------------------------------------------------------------+
 +------------------------------------------------------------------------------+
 | AnimOffsetData: Animation Offset Address Info                                |
 +--------------+-----+---------------------------------------------------------+
@@ -156,68 +171,98 @@ NORI file as it is suppose to look:
 | animOffsets  | aos | Animation first byte locations, aos = (4)(anims)        |
 +--------------+-----+---------------------------------------------------------+
 </pre><pre>
-Like the BitmapData section, the next 4 sections are cyclical and can exist in
-multiples asymmetrically. The AnimData, FrameData, PlaneData, and ExtraData
-section. They are structured visually like this:
+The next 4 sections are cyclical and can exist in multiples asymmetrically.
+The AnimData, FrameDataTop, PlaneData, and FrameDataBottom section.
+They are structured visually like this:
 </pre>
-
 * AnimData
-    * FrameData
-        * PlaneData
-        * ExtraData
+    - FrameDataTop
+        - PlaneData
+    - FrameDataBottom
 
 <pre>
 +------------------------------------------------------------------------------+
-| AnimData: Basic Data For Each Animation                                      |
+| AnimData: For Each Animation                                   (fos+36 Bytes)|
 +--------------+-----+---------------------------------------------------------+
 | Name         |Bytes| Description                                             |
 +--------------+-----+---------------------------------------------------------+
-| animName     | 32  | Animation name (uses EUC-KR encoding)                   |
+| title        | 32  | Animation title (uses EUC-KR encoding)                  |
 +--------------+-----+---------------------------------------------------------+
-| frames       |  4  | Number of frames(=nof)                                  |
+| numFrames    |  4  | Number of frames(=nof)                                  |
 +--------------+-----+---------------------------------------------------------+
 | frameOffsets | fos | Frame first byte locations, fos = (4)(nof)              |
 +--------------+-----+---------------------------------------------------------+
 +------------------------------------------------------------------------------+
-| FrameData: Basic Data For Each Frame in Every Animation                      |
+| FrameDataTop: For Each Frame                                        (8 Bytes)|
 +--------------+-----+---------------------------------------------------------+
 | Name         |Bytes| Description                                             |
 +--------------+-----+---------------------------------------------------------+
-| delay        |  4  | Duration of this frame (milliseconds)                   |
+| duration     |  4  | Duration of this frame (milliseconds)                   |
 +--------------+-----+---------------------------------------------------------+
-| plane_count  |  4  | Number of planes(=nop)                                  |
+| numPlanes    |  4  | Number of planes(=nop)                                  |
 +--------------+-----+---------------------------------------------------------+
 +------------------------------------------------------------------------------+
-| PlaneData: Basic Data For Each Plane in Every Frame                          |
+| PlaneData: For Each Plane                                          (28 Bytes)|
 +--------------+-----+---------------------------------------------------------+
 | Name         |Bytes| Description                                             |
 +--------------+-----+---------------------------------------------------------+
-| bitmap_id    |  4  | BMP ID number for plane (# from 0 to (numBMP-1))        |
+| bmp_id       |  4  | BMP ID number for plane (# from 0 to (numBMP-1))        |
 +--------------+-----+---------------------------------------------------------+
-| point_x      |  4  | Location coordinates x                                  |
+| plane_x      |  4  | Location coordinates x                                  |
 +--------------+-----+---------------------------------------------------------+
-| point_y      |  4  | Location coordinates y                                  |
+| plane_y      |  4  | Location coordinates y                                  |
 +--------------+-----+---------------------------------------------------------+
 | opacity      |  4  | Always 100, as in 100%, from what I've seen             |
 +--------------+-----+---------------------------------------------------------+
-| flip_axis    |  4  | Defines the flippable image axis; 0 = horiz, 1 = vert   |
+| flip         |  4  | How to flip img;0=none,1=horiz,2=vert,3=(horiz & vert)  |
 +--------------+-----+---------------------------------------------------------+
 | blend_mode   |  4  | ADD, MULTY, INVMULTY, etc                               |
 +--------------+-----+---------------------------------------------------------+
 | flag_param   |  4  | Seen 14,15,16,& 32; a flag for something                |
 +--------------+-----+---------------------------------------------------------+
 +------------------------------------------------------------------------------+
-| ExtraData: Extra Data After Every Frame                                      |
+| FrameDataBottom: For Each Frame              (size varies for each animation)|
 +--------------+-----+---------------------------------------------------------+
-| NORI Version |Bytes| Description                                             |
+| Name         |Bytes| Description                                             |
 +--------------+-----+---------------------------------------------------------+
-| v300         | 224 | Possibly Sound Effect Specification, otherwise unknown  |
+| numCoordSets |  4  | # of following coord sets, does not exist in NORI v300  |
 +--------------+-----+---------------------------------------------------------+
-| v301         | 228 | Possibly Sound Effect Specification, otherwise unknown  |
 +--------------+-----+---------------------------------------------------------+
-| v302         | 348 | Possibly Sound Effect Specification, otherwise unknown  |
+| coord_x      |  4  | x coordinate, may not exist, if v300 it won't exist     |
 +--------------+-----+---------------------------------------------------------+
-| v303         | 352 | Possibly Sound Effect Specification, otherwise unknown  |
+| coord_y      |  4  | y coordinate, may not exist, if v300 it won't exist     |
++--------------+-----+---------------------------------------------------------+
++--------------+-----+---------------------------------------------------------+
+| cdBlock      | cds | CD bytes, cds=144 (v300,v301), cds=96 (v302,v303)       |
++--------------+-----+---------------------------------------------------------+
+| entryBlocks  | ebs | ebs=28*6; currently stored base64; absent in v300 & v301|
++--------------+-----+---------------------------------------------------------+
+| UnknownData1 | 44  | some type of data; currently XML-stored as base64       |
++--------------+-----+---------------------------------------------------------+
+| soundEffect  | 18  | sound effect for frame; assumes file is in sound folder |
++--------------+-----+---------------------------------------------------------+
+| UnknownData2 | 18  | some more unknown data; currently XML-stored as base64  |
++--------------+-----+---------------------------------------------------------+
+| hasMCValues  |  4  | When =1, MyCamp section exists; this var is v303 only   |
++--------------+-----+---------------------------------------------------------+
++--------------+-----+---------------------------------------------------------+
+| mcParam0     |  4  | Unidentified data, usually 0                            |
++--------------+-----+---------------------------------------------------------+
+| mcParam1     |  4  | Unidentified data, related to mcParam7                  |
++--------------+-----+---------------------------------------------------------+
+| mcParam2     |  4  | Unidentified data, related to mcParam7                  |
++--------------+-----+---------------------------------------------------------+
+| mcParam3     |  4  | Unidentified data, usually 8                            |
++--------------+-----+---------------------------------------------------------+
+| mcParam4     |  4  | Unidentified data, usually 8                            |
++--------------+-----+---------------------------------------------------------+
+| mcParam5     |  4  | Unidentified data (could be a width param)              |
++--------------+-----+---------------------------------------------------------+
+| mcParam6     |  4  | Unidentified data (could be a length param)             |
++--------------+-----+---------------------------------------------------------+
+| mcParam7     |  A  | Unidentified, A=(mcParam1 x mcParam2), stored base64RLE |
++--------------+-----+---------------------------------------------------------+
+| mcParam8     | 20  | Unidentified data, currently XML-stored as base64       |
 +--------------+-----+---------------------------------------------------------+
 +------------------------------------------------------------------------------+
 | END OF ANIMATION DATA                                                        |
@@ -226,15 +271,12 @@ section. They are structured visually like this:
 | END OF FILE FORMAT                                                           |
 +------------------------------------------------------------------------------+
 </pre>
-
-================Additional Info=================
-================================================
+# ============= Additional Info =============
 
 <pre>
 Custom Run-length Encoding:
 Each scanline is defined by a encodedSize, and a cycle of background and
 foreground pixel data that is repeated until the encodedSize is met.
-</pre><pre>
 +------------------------------------------------------------------------------+
 | Compression: Custom RLE Per Scanline (wikipedia.org/wiki/Run-length_encoding)|
 +--------------+-----+---------------------------------------------------------+
@@ -249,69 +291,36 @@ foreground pixel data that is repeated until the encodedSize is met.
 +--------------+-----+---------------------------------------------------------+
 | fg_data      | fgs | Actual foreground pixels.  fgs = (fg)(bpp/8)            |
 +--------------+-----+---------------------------------------------------------+
-+------------------------------------------------------------------------------+
 </pre>
-
-The Extra Data Part
-------------------------------------------------
+## FrameDataBottom: Extra Info
 
 <pre>
-We believe that for 0, there is no special meaning or that it can be deduced
-for the most part.
-
-We define 3 different structures in the extra data part, which occur in
-the following sequence:
-
 1. CD block structure: Just a series of bytes with 0xCD value.
-It is probably unused (i.e. malloc-ed but not assigned any value)
 
-2. Entry block structure: Follows the following structure (total size: 28 bytes)
+2. Entry block structure (total size: 28 bytes)
 +------------------------------------------------------------------------------+
 | Entry block structure                                                        |
 +--------------+-----+---------------------------------------------------------+
 | Name         |Bytes| Description                                             |
 +--------------+-----+---------------------------------------------------------+
-| eParam_01    |  4  | Value usually = 0xCDCDCDCD (probably unassigned data)   |
+| eParam_00    |  4  | Value usually = 0xCDCDCDCD (probably unassigned data)   |
 +--------------+-----+---------------------------------------------------------+
-| eParam_02    |  4  | Unknown (usually null)                                  |
+| eParam_01    |  4  | Unknown (usually null)                                  |
 +--------------+-----+---------------------------------------------------------+
 | eParam_x     |  4  | Probably X-value                                        |
 +--------------+-----+---------------------------------------------------------+
 | eParam_y     |  4  | Probably Y-value                                        |
 +--------------+-----+---------------------------------------------------------+
-| eParam_03-05 | 12  | Unknown (usually null)                                  |
+| eParam_04    |  4  | Unknown (usually null)                                  |
 +--------------+-----+---------------------------------------------------------+
-+------------------------------------------------------------------------------+
+| eParam_05    |  4  | Unknown (usually null)                                  |
++--------------+-----+---------------------------------------------------------+
+| eParam_06    |  4  | Unknown (usually null)                                  |
++--------------+-----+---------------------------------------------------------+
 Some map files such as "map_sq00.bac" (Megalopolis Square) are found to have
 non-zero eParam_x and eParam_y for certain frames.
 Examples:
-* map_sq00.bac, eTO version (latest) - 0x8EA466
-* map_sq00_event01.bac, Taiwan TO client (file is zlib compressed) - 0x8F939A
-
-Only files with version 302 and 303 are found to have 5 of these per frame.
-
-3. Null block structure: Just a series of null bytes. Purpose unknown.
-
-    Version 300: Size = 224
-    1. CD block: Size is 0x90
-    2. No entry blocks
-    3. Null block: Size is 0x50
-
-    Version 301: Size = 228
-    1. 1 int32 value
-    2. CD block: Size is 0x90
-    3. No entry blocks
-    4. Null block: Size is 0x50
-
-    Version 302: Size = 348
-    1. 1 int32 value
-    2. CD block: Size is 0x60
-    3. 6 entry blocks
-    4. Null block: Size is 0x50
-
-    Version 303: Size = 352
-    1. 1 int32 value
-    2. CD block: Size is 0x60
-    3. 6 entry blocks
-    4. Null block: Size is 0x54
+- map_sq00.bac, eTO version (latest) - 0x8EA466
+- map_sq00_event01.bac, Taiwan TO client (zlib compressed) - 0x8F939A
 </pre>
+
