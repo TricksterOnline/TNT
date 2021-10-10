@@ -72,7 +72,7 @@ NORI file as it is suppose to look:
 +--------------+-----+---------------------------------------------------------+
 | version      |  4  | Version of the GAWI section format (always 300)         |
 +--------------+-----+---------------------------------------------------------+
-| bpp          |  4  | Bit depth of the image (8, 16, or 24)                   |
+| bpp          |  4  | Bit depth of the images (8, 16, or 24)                  |
 +--------------+-----+---------------------------------------------------------+
 | compressed   |  4  | Image compression flag (1 is yes) (RLE compression)     |
 +--------------+-----+---------------------------------------------------------+
@@ -86,7 +86,7 @@ NORI file as it is suppose to look:
 +--------------+-----+---------------------------------------------------------+
 | gParam7      |  4  | Unidentified data (ex: majority of mapbgeffect NORI)    |
 +--------------+-----+---------------------------------------------------------+
-| numBMP       |  4  | Number of images                                        |
+| bmpStructs   |  4  | Number of BMP structures                                |
 +--------------+-----+---------------------------------------------------------+
 | gsize        |  4  | Size of entire GAWI section                             |
 +--------------+-----+---------------------------------------------------------+
@@ -133,11 +133,11 @@ NORI file as it is suppose to look:
 | END OF BMP OFFSETS                                                           |
 +------------------------------------------------------------------------------+
 +------------------------------------------------------------------------------+
-| BitmapData: BMP Data For Each Image                            (sod+28 Bytes)|
+| BitmapData: BMP Data For Each Image             (4+(bmp_count)(sod+24) Bytes)|
 +--------------+-----+---------------------------------------------------------+
 | Name         |Bytes| Description                                             |
 +--------------+-----+---------------------------------------------------------+
-| data_count   |  4  | When >1, img subset exists, subs lack a bmpOffset value |
+| bmp_count    |  4  | When >1, img subset exists, subs lack a bmpOffset value |
 |              |     | When =0, it skips the rest of BitmapData                |
 +--------------+-----+---------------------------------------------------------+
 +--------------+-----+---------------------------------------------------------+
