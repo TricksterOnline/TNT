@@ -1,7 +1,7 @@
 # NORI Format Specification
 
 <pre>
-Copyright (C) 2014-2020 Libre Trickster Team
+Copyright (C) 2014-2024 Libre Trickster Team
 
 Note: All sizes throughout the specification are measured in bytes.
 
@@ -45,7 +45,7 @@ NORI file as it is suppose to look:
 +--------------+-----+---------------------------------------------------------+
 | nParam2      |  4  | Unidentified data (ex: majority of mapbgeffect NORI)    |
 +--------------+-----+---------------------------------------------------------+
-| nParam3      |  4  | negative var of some sort (ex: most of the mapbgeffect) |
+| nParam3      |  4  | Unidentified data (ex: majority of mapbgeffect NORI)    |
 +--------------+-----+---------------------------------------------------------+
 | nParam4      |  4  | Unidentified data (ex: majority of mapbgeffect NORI)    |
 +--------------+-----+---------------------------------------------------------+
@@ -138,7 +138,7 @@ NORI file as it is suppose to look:
 | Name         |Bytes| Description                                             |
 +--------------+-----+---------------------------------------------------------+
 | bmp_count    |  4  | When >1, img subset exists, subs lack a bmpOffset value |
-|              |     | When =0, it skips the rest of BitmapData                |
+|              |     | When =0, the BitmapData section & this var do not exist |
 +--------------+-----+---------------------------------------------------------+
 +--------------+-----+---------------------------------------------------------+
 | data_length  |  4  | data size(=sod)                                         |
@@ -260,7 +260,7 @@ They are structured visually like this:
 +--------------+-----+---------------------------------------------------------+
 | mcParam6     |  4  | Unidentified data (could be a length param)             |
 +--------------+-----+---------------------------------------------------------+
-| mcParam7     |  A  | Unidentified, A=(mcParam1 x mcParam2), stored base64RLE |
+| mcParam7     |  A  | Unidentified, A=(mcParam1 x mcParam2), stored base64    |
 +--------------+-----+---------------------------------------------------------+
 | mcParam8     | 20  | Unidentified data, currently XML-stored as base64       |
 +--------------+-----+---------------------------------------------------------+

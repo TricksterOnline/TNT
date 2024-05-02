@@ -1,0 +1,6 @@
+NORI Features Not Supported In Create
+-------------------------------------
+
+RLE compression, b/c zlib's DEFLATE is better if you need compression
+Palettes for non-8bit NORI, b/c they are not used
+Creation of 0 bmpCount NORI files

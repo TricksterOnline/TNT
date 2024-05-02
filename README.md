@@ -15,21 +15,10 @@ Non-updated forks are annoying. BTW, Followers > Stars > Watchers > Forks
 
 ------------------------------------
 
-How to compile and package TNT
-----------------------------------
+__Compiling and Packaging__:
 
-Install the Java JDK, links: [here](http://jdk.java.net) or [here](https://github.com/ojdkbuild/ojdkbuild)
-Access the `src` folder from the command prompt or terminal.
-
-Then run the following command:
-```bash
-javac *.java
-```
-
-Then to package TNT into a `.jar` file, run this command in the same directory:
-```bash
-jar cfe TNT.jar Main *.class
-```
+1. Install the Java JDK, links: [here](http://jdk.java.net) or [here](https://github.com/ojdkbuild/ojdkbuild)
+2. Double-click `compile-jar.bat` or `compile-jar.sh` to make `TNT.jar`
 
 Now you can copy & paste TNT.jar anywhere you like and use it from there.
 
